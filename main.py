@@ -23,8 +23,8 @@ baglanti = mysql.connector.connect(
 vtimlec = baglanti.cursor()
 
 #sembol = 'ASELS'
-alimlaricek = "SELECT * FROM `emirlerim` WHERE `sembol` = 'DOHOL' AND `alsat` = 'A'"
-satimlaricek = "SELECT * FROM `emirlerim` WHERE `sembol` = 'ASELS' AND `alsat` = 'S'"
+alimlariCek = "SELECT * FROM `emirlerim` WHERE `sembol` = 'DOHOL' AND `alsat` = 'A'"
+satimlariCek = "SELECT * FROM `emirlerim` WHERE `sembol` = 'ASELS' AND `alsat` = 'S'"
 #vtimlec.execute(satimlaricek)
 #satimlar = vtimlec.fetchall()
 
@@ -37,7 +37,7 @@ def listele_alim():
   kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
   kzarayuz.tableWidget_alim.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
   #alimlaricek = "SELECT * FROM `emirlerim` WHERE `sembol` = 'ASELS' AND `alsat` = 'A'"
-  vtimlec.execute(alimlaricek)
+  vtimlec.execute(alimlariCek)
   alimlar = vtimlec.fetchall()
   for alimdongu in alimlar:
     tarih = alimdongu[7].strftime("%d")+" "+alimdongu[7].strftime("%m")+" "+alimdongu[7].strftime("%Y")
@@ -45,6 +45,8 @@ def listele_alim():
     print(alimdongu[7], alimdongu[4], alimdongu[3]), alimHacim
     #print(alimdongu[1])
     print(tarih)
+    print(alimHacim)
+    print("degisiklik")
 
     #kzarayuz.tableWidget_alim.setItem(tarih, alimdongu[4], alimdongu[3], alimdongu[5], QTableWidgetItem )
   #for satirIndeks, satirVeri in enumerate(vtimlec):
@@ -53,8 +55,8 @@ def listele_alim():
       #print(satirVeri)
       #kzarayuz.tableWidget_alim.setItem(satirIndeks,sutunIndeks,QTableWidgetItem(str(value)))
 #listele_alim()
-print(alimlaricek)
-print(satimlaricek)
+print(alimlariCek)
+print(satimlariCek)
 def listele_satim():
   kzarayuz.tableWidget_satim.clear()
   kzarayuz.tableWidget_satim.setHorizontalHeaderLabels(('Adet','Fiyat','Eder','Tarih'))
