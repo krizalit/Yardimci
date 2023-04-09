@@ -1,11 +1,14 @@
 #--------------------------Kütüphane----------------------#
 #---------------------------------------------------------#
+import decimal
 import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QBrush, QColor
 from kzmodul2 import *
+from decimal import Decimal
+import xlrd
 
 Uygulama = QApplication(sys.argv)
 kzmodulAnaPencere = QMainWindow()
@@ -29,12 +32,71 @@ sembol = ""
 #alimlariCek = f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'"
 #satimlariCek = f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S'"
 sembolleriCek = "SELECT `sembol` FROM `semboller` ORDER BY `semboller`.`sembol` ASC "
-#----------------------Tanımlamalar-------------------------#
+#----------------------Global Değişken Tanımlamaları-------------------------#
 
 toplamAdet = 0
-toplamAlimAdet = 0
-toplamSatimAdet = 0
 
+toplamAlimAdet = 0
+alimOrtalamasi = 0.00
+toplamAlimHacim = 0.00
+
+toplamSatimAdet = 0
+satimOrtalamasi = 0.00
+toplamSatimHacim = 0.00
+
+karZararYuzdesi = 0
+pozFytBilgileri = [["", 0.00]]
+sembolFiyat = 0.00
+sembolVarlik = 0.00
+gerceklenen = 0.00
+cikis = 0.00
+
+hebe = 3586.86
+hube = 72
+zzz = hebe / hube
+zzz2 = hebe / 1000 * 998
+print("z2 : ", zzz2)
+yyy = decimal.Decimal(zzz2)
+xxx = yyy.quantize(Decimal('0.01'))
+print("decimal olmuş hali :", yyy)
+print("z2", zzz2)
+print("quantize olmuş hali :", xxx)
+
+def pozisyonlariOku():
+  global pozFytBilgileri
+  pozFytBilgileri = ""
+  workbook = xlrd.open_workbook("../../Pozisyonlarım.xlsx")
+  worksheet = workbook.sheet_by_index(0)
+
+
+  strSayisi =(worksheet.nrows)
+  #print("pozisyonlarım sembol sayısı", strSayisi)
+  #print(worksheet.cell_value(18, 0), worksheet.cell_value(18, 3))
+
+  gunlukFiyatDizesi = []
+  for i in range(1, strSayisi):
+    smbl = worksheet.cell_value(i, 0)
+    fyt = worksheet.cell_value(i, 3)
+    gunlukFiyatDizesi.append([smbl, fyt])
+    #print("Sembol ", smbl, "Fiyat :", fyt)
+  pozFytBilgileri = gunlukFiyatDizesi
+
+def pozisyonFiyatBilgisiAl():
+  global sembol
+  global pozFytBilgileri
+  global sembolFiyat
+
+  for dongusel in pozFytBilgileri:
+    smbl = dongusel[0]
+    fyt = dongusel[1]
+    if smbl == sembol:
+      sembolFiyat = fyt
+      print (smbl, fyt)
+      break
+    else:
+      sembolFiyat = 0
+
+  #print (str(sembolFiyat))
 
 def sembolleriYerlestir():
   vtimlec.execute(sembolleriCek)
@@ -57,9 +119,57 @@ def seciliSembolDegistir(item):
   global sembol
   sembol = item.text()
   kzarayuz.lineEdit_sembol.setText(sembol)
+
   alimVerisiIsleme()
   satimVerisiIsleme()
   adetYerlestir()
+  pozisyonFiyatBilgisiAl()
+
+  global sembolVarlik
+  sembolVarlik = toplamAdet * sembolFiyat
+  print("toplam adetle sembol fiyatı çarptık bu çıktı", sembolVarlik)
+  kzarayuz.lineEdit_guncelFiyat.setText(str(sembolFiyat))
+  smblvrlk = "₺"+"{:,.2f}".format(sembolVarlik)
+  kzarayuz.label_sembolVarlik.setText(smblvrlk)
+  hesapKitap()
+
+def hesapKitap():
+  global toplamAdet, toplamAlimAdet, toplamSatimAdet, toplamAlimHacim, toplamSatimHacim, sembolFiyat, sembolVarlik, cikis, karZararYuzdesi, gerceklenen
+  global alimOrtalamasi, satimOrtalamasi
+  if toplamAlimAdet == 0:
+    kzarayuz.label_cikis.setText("0")
+    kzarayuz.label_sembolVarlik.setText("0")
+  else:
+    if toplamSatimAdet == 0:
+      gerceklenen = 0
+    else:
+      print("Toplam Alım Adet", toplamAlimAdet, "Toplam Satım Adet", toplamSatimAdet)
+      satilanmiktar = toplamAlimAdet - toplamSatimAdet
+      satimAlimFarki = satimOrtalamasi - alimOrtalamasi
+      print("Satılan Miktar:", satilanmiktar, "Satım Alım Farkı :", satimAlimFarki)
+      grckln = satilanmiktar * satimAlimFarki
+      print("gerçeklenen sadeleşmemiş", grckln)
+      gerceklenen = "{:.2f}".format(satilanmiktar * satimAlimFarki)
+      print("Gerçeklenen: ", gerceklenen)
+      print("Sembol Varlık: ", sembolVarlik)
+      print("Toplam Satım Hacim :", toplamSatimHacim)
+      print("Toplam Alım Hacim: ", toplamAlimHacim)
+      print("Toplam alım Adet :", toplamAlimAdet)
+
+      smblvrlk = Decimal(sembolVarlik)
+      tsh = Decimal(toplamSatimHacim)
+      tah = Decimal(toplamAlimHacim)
+
+      cikis1 = float(smblvrlk + tsh - tah )
+      cikis = "{:,.2f}".format(cikis1)
+      kzarayuz.label_cikis.setText(str(cikis))
+      kzarayuz.label_gerceklenen.setText(str(gerceklenen))
+
+      print(" hadi bakalım", cikis1)
+      print("Cıkış :", cikis)
+
+
+
 
 
 
@@ -69,6 +179,8 @@ def sembolGonder():
 def alimVerisiIsleme():
   alimAdet = 0
   alimHacim = 0
+  global toplamAlimHacim
+  toplamAlimHacim = 0
 
   # MySQL sorgusunu çalıştır
   vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'")
@@ -82,6 +194,8 @@ def alimVerisiIsleme():
     kzarayuz.label_satimAdet.setText("0")
     kzarayuz.label_alimOrtalama.setText("0")
     kzarayuz.label_satimOrtalama.setText("0")
+    kzarayuz.label_cikis.setText("0")
+    kzarayuz.label_karzarar.setText("0")
   else:
 
     # Verileri işleme
@@ -92,6 +206,7 @@ def alimVerisiIsleme():
       alimAdet += satir[1]
       hacim = satir[3] / 1000 * 1002
       alimHacim += hacim
+
 
       # Tarih verisini dd mm yyyy formatına çevir
       tarih = satir[0].strftime("%d %m %Y")
@@ -130,21 +245,28 @@ def alimVerisiIsleme():
 
     #Saydadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
     print("Toplam Alınan Adet:" + str(alimAdet))
-    alimOrtalamasi = alimHacim / alimAdet
-    alimOrtalamasiSade = "{:.2f}".format(alimOrtalamasi)
-    print("Alım Ortalaması:" + str(alimOrtalamasiSade))
+
+    almOrtlm = alimHacim / alimAdet
+    print("Alım ortalaması sadeleşmeden önce", almOrtlm)
+    alimOrtalamasiSade = "{:.2f}".format(almOrtlm)
+    print("Alım Ortalaması sadeleştikten sonra:" + str(alimOrtalamasiSade))
     kzarayuz.label_alimOrtalama.clear()
     kzarayuz.label_alimOrtalama.setText(str(alimOrtalamasiSade))
-    global toplamAdet
+    global toplamAdet, toplamAlimAdet, alimOrtalamasi
     toplamAdet += alimAdet
-    global toplamAlimAdet
+
     toplamAlimAdet += alimAdet
+    toplamAlimHacim += alimHacim
+    alimOrtalamasi = almOrtlm
+    #print("Toplam Alım hacim :", toplamAlimHacim)
     kzarayuz.label_alimAdet.setText(str(alimAdet))
 
 
 def satimVerisiIsleme():
   satimAdet = 0
   satimHacim = 0
+  global toplamSatimHacim
+  toplamSatimHacim = 0
 
   # MySQL sorgusunu çalıştır
   vtimlec.execute(f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S'")
@@ -153,6 +275,9 @@ def satimVerisiIsleme():
     kzarayuz.tableWidget_satim.clear()
     kzarayuz.tableWidget_satim.setHorizontalHeaderLabels(['Adet', 'Fiyat', 'Eder', 'Tarih'])
     kzarayuz.tableWidget_satim.setRowCount(0)
+    kzarayuz.label_satimAdet.setText("0")
+    kzarayuz.label_gerceklenen.setText("Satım Yok")
+
   else:
 
     # Verileri işleme
@@ -197,16 +322,20 @@ def satimVerisiIsleme():
         kzarayuz.tableWidget_satim.setItem(satirIndeks, sutunIndeks, hucre)
 
     # SayFadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
-    print("Toplam Satılan Adet:" + str(satimAdet))
-    satimOrtalamasi = satimHacim / satimAdet
-    satimOrtalamasiSade = "{:.2f}".format(satimOrtalamasi)
-    print("Satım Ortalaması:" + str(satimOrtalamasiSade))
+    #print("Toplam Satılan Adet:" + str(satimAdet))
+    stmOrtlm = satimHacim / satimAdet
+    print("Stm ortalam sadeleşmeden önce", stmOrtlm)
+    satimOrtalamasiSade = "{:.2f}".format(stmOrtlm)
+    print("Satım Ortalaması sadeleşmiş:" + str(satimOrtalamasiSade))
     kzarayuz.label_satimOrtalama.clear()
     kzarayuz.label_satimOrtalama.setText(str(satimOrtalamasiSade))
-    global toplamAdet
+    global toplamAdet, toplamSatimAdet, satimOrtalamasi
     toplamAdet -= satimAdet
-    global toplamSatimAdet
+
     toplamSatimAdet += satimAdet
+    toplamSatimHacim += satimHacim
+    satimOrtalamasi = stmOrtlm
+    #print("Toplam SAtım Hacim :", toplamSatimHacim)
     kzarayuz.label_satimAdet.setText(str(satimAdet))
 
 def alimAdediYerlestir():
@@ -229,7 +358,8 @@ kzmodulAnaPencere.show()
 #alimVerisiIsleme()
 #satimVerisiIsleme()
 sembolleriYerlestir()
-
+pozisyonlariOku()
+#fiyatDizesiniYazdir()
 #adetYerlestir()
 #alimAdediYerlestir()
 print(toplamAdet)
