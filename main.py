@@ -16,7 +16,6 @@ kzmodulAnaPencere = QMainWindow()
 kzarayuz = Ui_Form()
 kzarayuz.setupUi(kzmodulAnaPencere)
 
-
 #----------------------Veritabanı-------------------------#
 import mysql.connector
 
