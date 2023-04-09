@@ -1,6 +1,6 @@
 #--------------------------Kütüphane----------------------#
 #---------------------------------------------------------#
-import decimal
+
 import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
@@ -9,6 +9,7 @@ from PyQt5.QtGui import QBrush, QColor
 from kzmodul2 import *
 from decimal import Decimal
 import xlrd
+import decimal
 
 Uygulama = QApplication(sys.argv)
 kzmodulAnaPencere = QMainWindow()
@@ -27,13 +28,9 @@ baglanti = mysql.connector.connect(
 )
 vtimlec = baglanti.cursor()
 
-sembol = ""
-
-#alimlariCek = f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'"
-#satimlariCek = f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S'"
-sembolleriCek = "SELECT `sembol` FROM `semboller` ORDER BY `semboller`.`sembol` ASC "
 #----------------------Global Değişken Tanımlamaları-------------------------#
 
+sembol = "SELAM"
 toplamAdet = 0
 
 toplamAlimAdet = 0
@@ -44,13 +41,23 @@ toplamSatimAdet = 0
 satimOrtalamasi = 0.00
 toplamSatimHacim = 0.00
 
-karZararYuzdesi = 0
-pozFytBilgileri = [["", 0.00]]
+gunsonuFiyat = {}
+#pozFytBilgileri = [["", 0.00]]
 sembolFiyat = 0.00
 sembolVarlik = 0.00
 gerceklenen = 0.00
 cikis = 0.00
+karZararYuzdesi = 0
 
+#-----------Veritabanından çekimlerin tanımlamaları--------------------#
+
+#alimlariCek = f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'"
+#satimlariCek = f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S'"
+sembolleriCek = "SELECT `sembol` FROM `semboller` ORDER BY `semboller`.`sembol` ASC "
+
+
+
+"""
 hebe = 3586.86
 hube = 72
 zzz = hebe / hube
@@ -61,7 +68,15 @@ xxx = yyy.quantize(Decimal('0.01'))
 print("decimal olmuş hali :", yyy)
 print("z2", zzz2)
 print("quantize olmuş hali :", xxx)
+"""
 
+def acilisEkranTemizle():
+  kzarayuz.label_cikis.setText("Sembol Seçin")
+
+
+
+
+"""
 def pozisyonlariOku():
   global pozFytBilgileri
   pozFytBilgileri = ""
@@ -80,7 +95,9 @@ def pozisyonlariOku():
     gunlukFiyatDizesi.append([smbl, fyt])
     #print("Sembol ", smbl, "Fiyat :", fyt)
   pozFytBilgileri = gunlukFiyatDizesi
+"""
 
+"""
 def pozisyonFiyatBilgisiAl():
   global sembol
   global pozFytBilgileri
@@ -97,6 +114,7 @@ def pozisyonFiyatBilgisiAl():
       sembolFiyat = 0
 
   #print (str(sembolFiyat))
+"""
 
 def sembolleriYerlestir():
   vtimlec.execute(sembolleriCek)
@@ -107,12 +125,12 @@ def sembolleriYerlestir():
   for smbl in sembolGelenler:
     kzarayuz.listWidget_semboller.addItem(smbl[0])
 
-  # QListWidget nesnesindeki herhangi bir öğe tıklandığında seciliSembolDegistir fonksiyonunu çağır
-  kzarayuz.listWidget_semboller.itemClicked.connect(seciliSembolDegistir)
+  # QListWidget nesnesindeki herhangi bir öğe tıklandığında seciliSembolIslemleri fonksiyonunu çağır
+  kzarayuz.listWidget_semboller.itemClicked.connect(seciliSembolIslemleri)
   global sembol
   kzarayuz.lineEdit_sembol.setText(str(sembol))
 
-def seciliSembolDegistir(item):
+def seciliSembolIslemleri(item):
   global toplamAdet
   toplamAdet = 0
 
@@ -123,7 +141,7 @@ def seciliSembolDegistir(item):
   alimVerisiIsleme()
   satimVerisiIsleme()
   adetYerlestir()
-  pozisyonFiyatBilgisiAl()
+  sembolunFiyatiniOgren(sembol)
 
   global sembolVarlik
   sembolVarlik = toplamAdet * sembolFiyat
@@ -132,6 +150,7 @@ def seciliSembolDegistir(item):
   smblvrlk = "₺"+"{:,.2f}".format(sembolVarlik)
   kzarayuz.label_sembolVarlik.setText(smblvrlk)
   hesapKitap()
+  sembolunFiyatiniOgren(sembol)
 
 def hesapKitap():
   global toplamAdet, toplamAlimAdet, toplamSatimAdet, toplamAlimHacim, toplamSatimHacim, sembolFiyat, sembolVarlik, cikis, karZararYuzdesi, gerceklenen
@@ -161,17 +180,15 @@ def hesapKitap():
       tah = Decimal(toplamAlimHacim)
 
       cikis1 = float(smblvrlk + tsh - tah )
+      cikis2 = round(cikis1, 2)
       cikis = "{:,.2f}".format(cikis1)
       kzarayuz.label_cikis.setText(str(cikis))
       kzarayuz.label_gerceklenen.setText(str(gerceklenen))
 
       print(" hadi bakalım", cikis1)
       print("Cıkış :", cikis)
-
-
-
-
-
+      carpionbin = cikis2 * 1000
+      print("Caroı on bin :", carpionbin)
 
 def sembolGonder():
   kzarayuz.pushButton_sembolGonder.clicked()
@@ -351,17 +368,55 @@ def adetYerlestir():
 #------------------------Uygulama Oluştur-----------------#
 #---------------------------------------------------------#
 
+#-------------------Fiyat oluşturma ve öğrenme bölümü------------------------#
 
+def gunsonuFiyatlariOlustur():
+  # ----- progam açılışında yereldeki dosyadan bir önceki gün fiyat bilgilerini alır, dict e ekler------#
+  # ----- program boyunca kullanılacak fiyat bilgileri bu dictten okunur -------------------------------#
+
+  workbook = xlrd.open_workbook("../../Pozisyonlarım.xlsx")
+  worksheet = workbook.sheet_by_index(0)
+  strSayisi =(worksheet.nrows)
+
+  for i in range(1, strSayisi):
+    smbl = worksheet.cell_value(i, 0)
+    fyt = worksheet.cell_value(i, 3)
+    gunsonuFiyat[smbl] = fyt    # satırın ilk elemanını anahtar, ikinci elemanını değer olarak sözlüğe ekliyoruz
+
+  return gunsonuFiyat
+
+def sembolunFiyatiniOgren(sembol):
+  # her sembol için gunsonuFiyat dict inden fiyat bilgisini alan fonksiyon
+  global sembolFiyat
+  dictebak = gunsonuFiyat.get(sembol)
+  if dictebak == None:
+    sembolFiyat = 0
+  else:
+    sembolFiyat = dictebak
+  #return sembolFiyat
+
+#----------------------------------------------------------------------------#
+
+
+
+
+#-------------------Program başlangıcında çalışacak fonksiyonlar-------------#
 
 kzmodulAnaPencere.show()
+# En baş en baş, ahanda gördüğün pencere bununla oluşuyor.
 
-#alimVerisiIsleme()
-#satimVerisiIsleme()
+gunsonuFiyatlariOlustur()
+# Her sembolün bir önceki gün hangi fiyattan kapandığının bilgisini oluşturmaya yarıyor
+
 sembolleriYerlestir()
-pozisyonlariOku()
+# Hani solda aşağı doğru akan liste var ya sembollerin olduğu, ahanda onu oluşturuyor.
+
+
+
+#pozisyonlariOku()
 #fiyatDizesiniYazdir()
 #adetYerlestir()
 #alimAdediYerlestir()
-print(toplamAdet)
+#print(toplamAdet)
 #print(satimlariCek)
 sys.exit(Uygulama.exec_())
