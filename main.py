@@ -30,23 +30,41 @@ vtimlec = baglanti.cursor()
 #----------------------Global Değişken Tanımlamaları-------------------------#
 
 sembol = "SELAM"
+#sembole selam dedim çümkü program açıldığında daha herhangibir sembol seçilmediğinde
+# yukarıda ortadaki yerde bir şey yazması gerekiyor. Boş kalmasın bari selam desin.
+# zaten ilk sembol seçildiğinde bu değişkenin değeri değişecek.
+
 toplamAdet = 0
+# o sembolden elinde kaç adet olduğu, toplam alim adedinden toplam satım adedi düşülerek oluşan veri
 
 toplamAlimAdet = 0
 alimOrtalamasi = 0.00
 toplamAlimHacim = 0.00
+# alım işlemlerinde kaç adet alındığı, bunların yekünü (hacim) ve alım ortalaması değerleri
 
 toplamSatimAdet = 0
 satimOrtalamasi = 0.00
 toplamSatimHacim = 0.00
+# satım işlemlerinde kaç adet alındığı, bunların yekünü (hacim) ve alım ortalaması değerleri
 
 gunsonuFiyat = {}
-#pozFytBilgileri = [["", 0.00]]
+# sembolüerin bir önceki gün kaçtan kapandığı bilgisi. bunu indirlimiş excel dosyasından alıyor.
+# bu bir dict verisi, içinde her sembol için fiyat bilgisi tutuyor.
+
 sembolFiyat = 0.00
+# sembole özel gün sonu kapanış fiyatı bilgisi. tek sembol için ve her sembol seçildiğinde değişiyor. adı üstünde değişken
+
 sembolVarlik = 0.00
+# sembolün varolan adedi ve fiyatının çarpımı ile oluşturulan değer. Vakıfbank değer diyor buna ben varlık diyorum.
+
 gerceklenen = 0.00
+# realizasyon dediğiniz olay, yapılmış satış işlem adedi x ( satım fiyatı -  sembol fiyat ) şeklinde hesaplanıyor.
+
 cikis = 0.00
+# Komple pozisyondan o anki fiyattan çıktığındaki durumunu gösterir. Tabi önceki yaptığın alım satımları dikkate alarak.
+
 karZararYuzdesi = 0
+# İşte bu çıkışta kar zarar durumunu yüzde olarak gösterir.
 
 #-----------Veritabanından çekimlerin tanımlamaları--------------------#
 
@@ -54,68 +72,8 @@ karZararYuzdesi = 0
 #satimlariCek = f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S'"
 sembolleriCek = "SELECT `sembol` FROM `semboller` ORDER BY `semboller`.`sembol` ASC "
 
-
-
-"""
-hebe = 3586.86
-hube = 72
-zzz = hebe / hube
-zzz2 = hebe / 1000 * 998
-print("z2 : ", zzz2)
-yyy = decimal.Decimal(zzz2)
-xxx = yyy.quantize(Decimal('0.01'))
-print("decimal olmuş hali :", yyy)
-print("z2", zzz2)
-print("quantize olmuş hali :", xxx)
-"""
-
-def acilisEkranTemizle():
-  kzarayuz.label_cikis.setText("Sembol Seçin")
-
-
-
-
-"""
-def pozisyonlariOku():
-  global pozFytBilgileri
-  pozFytBilgileri = ""
-  workbook = xlrd.open_workbook("../../Pozisyonlarım.xlsx")
-  worksheet = workbook.sheet_by_index(0)
-
-
-  strSayisi =(worksheet.nrows)
-  #print("pozisyonlarım sembol sayısı", strSayisi)
-  #print(worksheet.cell_value(18, 0), worksheet.cell_value(18, 3))
-
-  gunlukFiyatDizesi = []
-  for i in range(1, strSayisi):
-    smbl = worksheet.cell_value(i, 0)
-    fyt = worksheet.cell_value(i, 3)
-    gunlukFiyatDizesi.append([smbl, fyt])
-    #print("Sembol ", smbl, "Fiyat :", fyt)
-  pozFytBilgileri = gunlukFiyatDizesi
-"""
-
-"""
-def pozisyonFiyatBilgisiAl():
-  global sembol
-  global pozFytBilgileri
-  global sembolFiyat
-
-  for dongusel in pozFytBilgileri:
-    smbl = dongusel[0]
-    fyt = dongusel[1]
-    if smbl == sembol:
-      sembolFiyat = fyt
-      print (smbl, fyt)
-      break
-    else:
-      sembolFiyat = 0
-
-  #print (str(sembolFiyat))
-"""
-
 def sembolleriYerlestir():
+  # Soldaki listWidget öğesine sembolleri dizer ve buna tıklandığında sembolle ilgili işlemleri tetikler #
   vtimlec.execute(sembolleriCek)
   sembolGelenler = vtimlec.fetchall()
 
@@ -126,13 +84,13 @@ def sembolleriYerlestir():
 
   # QListWidget nesnesindeki herhangi bir öğe tıklandığında seciliSembolIslemleri fonksiyonunu çağır
   kzarayuz.listWidget_semboller.itemClicked.connect(seciliSembolIslemleri)
-  global sembol
-  kzarayuz.lineEdit_sembol.setText(str(sembol))
+
 
 def seciliSembolIslemleri(item):
   global toplamAdet
   toplamAdet = 0
 
+  # üstteki sembol lineEditine sembol adını yaz
   global sembol
   sembol = item.text()
   kzarayuz.lineEdit_sembol.setText(sembol)
@@ -149,7 +107,7 @@ def seciliSembolIslemleri(item):
   smblvrlk = "₺"+"{:,.2f}".format(sembolVarlik)
   kzarayuz.label_sembolVarlik.setText(smblvrlk)
   hesapKitap()
-  sembolunFiyatiniOgren(sembol)
+
 
 def hesapKitap():
   global toplamAdet, toplamAlimAdet, toplamSatimAdet, toplamAlimHacim, toplamSatimHacim, sembolFiyat, sembolVarlik, cikis, karZararYuzdesi, gerceklenen
@@ -189,20 +147,17 @@ def hesapKitap():
       carpionbin = cikis2 * 1000
       print("Caroı on bin :", carpionbin)
 
-def sembolGonder():
-  kzarayuz.pushButton_sembolGonder.clicked()
 
 def alimVerisiIsleme():
   alimAdet = 0
   alimHacim = 0
-  global toplamAlimHacim
+  global toplamAlimHacim, alimOrtalamasi
   toplamAlimHacim = 0
 
   # MySQL sorgusunu çalıştır
   vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'")
   islemIcinGelenAlimlar = vtimlec.fetchall()
   if len(islemIcinGelenAlimlar) == 0:
-
     kzarayuz.tableWidget_alim.clear()
     kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
     kzarayuz.tableWidget_alim.setRowCount(0)
@@ -214,14 +169,23 @@ def alimVerisiIsleme():
     kzarayuz.label_karzarar.setText("0")
   else:
 
-    # Verileri işleme
+    # Verileri işleme - list view öğesine döngüyle yerleştirilecek dizeyi oluşturma işlemi
+    # Neden dizeye ekliyorsun dersen listview eklenmesi biraz karışık işlem her sütun satır için ayrı hücre oluşturuyor
+    # o yüzden vritabanından gelen veriyi direk lisviewa ekleyemiyoruz. aşağıda satirIndeks satirVeri
+    # sutunIndeks sütunVeri filan işlemden anlayacaksın.
+
     alimVerisiDizeye = []
     for satir in islemIcinGelenAlimlar:
 
-      # Toplam alım ve hacimi hesaplama - Dizeye ekleme esnasında yan işlem
+      # Hazır veritabanından gelen veriyi işleyen döngü varken alım toplamını  ve hacmini hesaplama -
+      # Dizeye ekleme esnasında yan işlem yani.
+
       alimAdet += satir[1]
-      hacim = satir[3] / 1000 * 1002
+      #alimların kaç tane olduğunu bilmek için, alimAdet global veri, adet ise döngü içindeki veri.
+
+      hacim = round(satir[3] / 1000 * 1002, 2)
       alimHacim += hacim
+      # alımlarda toplam ne kadar para harcadın, hacim yani
 
 
       # Tarih verisini dd mm yyyy formatına çevir
@@ -260,21 +224,17 @@ def alimVerisiIsleme():
         kzarayuz.tableWidget_alim.setItem(satirIndeks, sutunIndeks, hucre)
 
     #Saydadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
-    print("Toplam Alınan Adet:" + str(alimAdet))
 
-    almOrtlm = alimHacim / alimAdet
-    print("Alım ortalaması sadeleşmeden önce", almOrtlm)
-    alimOrtalamasiSade = "{:.2f}".format(almOrtlm)
-    print("Alım Ortalaması sadeleştikten sonra:" + str(alimOrtalamasiSade))
+    alimOrtalamasi = round(alimHacim / alimAdet, 2)
+
     kzarayuz.label_alimOrtalama.clear()
-    kzarayuz.label_alimOrtalama.setText(str(alimOrtalamasiSade))
-    global toplamAdet, toplamAlimAdet, alimOrtalamasi
+    kzarayuz.label_alimOrtalama.setText(str(alimOrtalamasi))
+    global toplamAdet, toplamAlimAdet
     toplamAdet += alimAdet
 
     toplamAlimAdet += alimAdet
     toplamAlimHacim += alimHacim
-    alimOrtalamasi = almOrtlm
-    #print("Toplam Alım hacim :", toplamAlimHacim)
+
     kzarayuz.label_alimAdet.setText(str(alimAdet))
 
 
@@ -284,7 +244,6 @@ def satimVerisiIsleme():
   global toplamSatimHacim
   toplamSatimHacim = 0
 
-  # MySQL sorgusunu çalıştır
   vtimlec.execute(f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S'")
   islemIcinGelenSatimlar = vtimlec.fetchall()
   if len(islemIcinGelenSatimlar) == 0:
@@ -301,7 +260,7 @@ def satimVerisiIsleme():
     for satir in islemIcinGelenSatimlar:
       # Toplam alım ve hacimi hesaplama - Dizeye ekleme esnasında yan işlem
       satimAdet += satir[0]
-      hacim = satir[2] / 1000 * 998
+      hacim = round(satir[2] / 1000 * 998, 2)
       satimHacim += hacim
 
       # Tarih verisini dd mm yyyy formatına çevir
@@ -364,8 +323,7 @@ def adetYerlestir():
   global toplamAdet
   kzarayuz.label_toplamAdet.setText(str(toplamAdet))
 
-#------------------------Uygulama Oluştur-----------------#
-#---------------------------------------------------------#
+
 
 #-------------------Fiyat oluşturma ve öğrenme bölümü------------------------#
 
@@ -396,8 +354,18 @@ def sembolunFiyatiniOgren(sembol):
 
 #----------------------------------------------------------------------------#
 
-
-
+def acilisEkranTemizle():
+  kzarayuz.label_alimAdet.clear()
+  kzarayuz.label_alimOrtalama.clear()
+  kzarayuz.label_cikis.clear()
+  kzarayuz.label_gerceklenen.clear()
+  kzarayuz.label_karzarar.clear()
+  kzarayuz.label_satimAdet.clear()
+  kzarayuz.label_satimOrtalama.clear()
+  kzarayuz.label_sembolVarlik.setText("Sembol seçin")
+  kzarayuz.label_toplamAdet.clear()
+  kzarayuz.lineEdit_guncelFiyat.clear()
+  kzarayuz.lineEdit_sembol.setText(sembol)
 
 #-------------------Program başlangıcında çalışacak fonksiyonlar-------------#
 
@@ -410,12 +378,9 @@ gunsonuFiyatlariOlustur()
 sembolleriYerlestir()
 # Hani solda aşağı doğru akan liste var ya sembollerin olduğu, ahanda onu oluşturuyor.
 
+acilisEkranTemizle()
+# En başta bir kere çalışacak. Ekrandaki list widget hariç herşeyi temizliyor.
 
 
-#pozisyonlariOku()
-#fiyatDizesiniYazdir()
-#adetYerlestir()
-#alimAdediYerlestir()
-#print(toplamAdet)
-#print(satimlariCek)
 sys.exit(Uygulama.exec_())
+# Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
