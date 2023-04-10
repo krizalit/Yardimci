@@ -2,14 +2,11 @@
 #---------------------------------------------------------#
 
 import sys
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QBrush, QColor
-from kzmodul2 import *
-from decimal import Decimal
+from PyQt5 import QtWidgets, QtGui, QtCore
+from kzmodul2 import Ui_Form
+import mysql.connector
 import xlrd
-import decimal
+from decimal import Decimal
 
 Uygulama = QApplication(sys.argv)
 kzmodulAnaPencere = QMainWindow()
