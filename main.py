@@ -2,14 +2,14 @@
 #---------------------------------------------------------#
 
 import sys
-from PyQt5 import QtWidgets
+#from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QBrush, QColor
-from kzmodul2 import *
+from kzModul import *
 from decimal import Decimal
 import xlrd
-import decimal
+#import decimal
 
 Uygulama = QApplication(sys.argv)
 kzmodulAnaPencere = QMainWindow()
@@ -30,7 +30,7 @@ vtimlec = baglanti.cursor()
 #----------------------Global Değişken Tanımlamaları-------------------------#
 
 sembol = "SELAM"
-#sembole selam dedim çümkü program açıldığında daha herhangibir sembol seçilmediğinde
+# sembole selam dedim çümkü program açıldığında daha herhangibir sembol seçilmediğinde
 # yukarıda ortadaki yerde bir şey yazması gerekiyor. Boş kalmasın bari selam desin.
 # zaten ilk sembol seçildiğinde bu değişkenin değeri değişecek.
 
@@ -87,8 +87,10 @@ def sembolleriYerlestir():
 
 
 def seciliSembolIslemleri(item):
-  global toplamAdet
+  global toplamAdet, toplamAlimAdet
   toplamAdet = 0
+  toplamAlimAdet = 0
+
 
   # üstteki sembol lineEditine sembol adını yaz
   global sembol
@@ -97,65 +99,73 @@ def seciliSembolIslemleri(item):
 
   alimVerisiIsleme()
   satimVerisiIsleme()
-  adetYerlestir()
   sembolunFiyatiniOgren(sembol)
-
-  global sembolVarlik
-  sembolVarlik = toplamAdet * sembolFiyat
-  print("toplam adetle sembol fiyatı çarptık bu çıktı", sembolVarlik)
-  kzarayuz.lineEdit_guncelFiyat.setText(str(sembolFiyat))
-  smblvrlk = "₺"+"{:,.2f}".format(sembolVarlik)
-  kzarayuz.label_sembolVarlik.setText(smblvrlk)
   hesapKitap()
-
+  adetYerlestir()
 
 def hesapKitap():
-  global toplamAdet, toplamAlimAdet, toplamSatimAdet, toplamAlimHacim, toplamSatimHacim, sembolFiyat, sembolVarlik, cikis, karZararYuzdesi, gerceklenen
-  global alimOrtalamasi, satimOrtalamasi
+  global toplamAdet, toplamAlimAdet, toplamSatimAdet, toplamAlimHacim, toplamSatimHacim, alimOrtalamasi, satimOrtalamasi
+  global sembolFiyat, sembolVarlik, gerceklenen, cikis, karZararYuzdesi
   if toplamAlimAdet == 0:
     kzarayuz.label_cikis.setText("0")
     kzarayuz.label_sembolVarlik.setText("0")
+    sembolFiyat = 0
+    sembolVarlik = 0
+    cikis = 0
+    karZararYuzdesi = 0
+    gerceklenen = 0
+    print("burda bitmesi gerekiyor.")
   else:
     if toplamSatimAdet == 0:
       gerceklenen = 0
+      kzarayuz.label_gerceklenen.setText(str(gerceklenen))
     else:
       print("Toplam Alım Adet", toplamAlimAdet, "Toplam Satım Adet", toplamSatimAdet)
       satilanmiktar = toplamAlimAdet - toplamSatimAdet
       satimAlimFarki = satimOrtalamasi - alimOrtalamasi
       print("Satılan Miktar:", satilanmiktar, "Satım Alım Farkı :", satimAlimFarki)
-      grckln = satilanmiktar * satimAlimFarki
-      print("gerçeklenen sadeleşmemiş", grckln)
-      gerceklenen = "{:.2f}".format(satilanmiktar * satimAlimFarki)
+      gerceklenen = round(toplamSatimAdet * satimAlimFarki, 2)
+
       print("Gerçeklenen: ", gerceklenen)
-      print("Sembol Varlık: ", sembolVarlik)
       print("Toplam Satım Hacim :", toplamSatimHacim)
       print("Toplam Alım Hacim: ", toplamAlimHacim)
       print("Toplam alım Adet :", toplamAlimAdet)
 
+      sembolVarlik = round(toplamAdet * sembolFiyat, 2)
+      print("Sembol Varlık :", sembolVarlik)
+
       smblvrlk = Decimal(sembolVarlik)
       tsh = Decimal(toplamSatimHacim)
       tah = Decimal(toplamAlimHacim)
+      cikis1 = smblvrlk + tsh - tah
 
-      cikis1 = float(smblvrlk + tsh - tah )
-      cikis2 = round(cikis1, 2)
-      cikis = "{:,.2f}".format(cikis1)
-      kzarayuz.label_cikis.setText(str(cikis))
-      kzarayuz.label_gerceklenen.setText(str(gerceklenen))
 
-      print(" hadi bakalım", cikis1)
+      cikis = round(float(smblvrlk + tsh - tah), 2)
+      print("Çıkış 1 :", cikis1)
+
+      #cikis = float(sembolVarlik + toplamSatimHacim - toplamAlimHacim)
       print("Cıkış :", cikis)
-      carpionbin = cikis2 * 1000
-      print("Caroı on bin :", carpionbin)
+      karZararYuzdesi = round(float(cikis1 / tah * 100), 2)
+      print("Kar zarar", round(karZararYuzdesi, 2))
+      print("SFiyat :", sembolFiyat)
+      varlik = "₺ " + vrgnkt(sembolVarlik)
+      kzarayuz.label_cikis.setText(vrgnkt(cikis))
+      kzarayuz.label_gerceklenen.setText(vrgnkt(gerceklenen))
+      kzarayuz.label_karzarar.setText(str(karZararYuzdesi))
+      kzarayuz.lineEdit_guncelFiyat.setText(vrgnkt(sembolFiyat))
+      kzarayuz.label_sembolVarlik.setText(varlik)
 
 
 def alimVerisiIsleme():
-  alimAdet = 0
-  alimHacim = 0
-  global toplamAlimHacim, alimOrtalamasi
+  adetSay = 0
+  hacimSay = 0
+  global toplamAlimAdet, toplamAlimHacim, alimOrtalamasi, toplamAdet
+  toplamAlimAdet = 0
+  alimOrtalamasi = 0
   toplamAlimHacim = 0
 
   # MySQL sorgusunu çalıştır
-  vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'")
+  vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A' ORDER BY `emirlerim`.`gun` ASC")
   islemIcinGelenAlimlar = vtimlec.fetchall()
   if len(islemIcinGelenAlimlar) == 0:
     kzarayuz.tableWidget_alim.clear()
@@ -167,6 +177,7 @@ def alimVerisiIsleme():
     kzarayuz.label_satimOrtalama.setText("0")
     kzarayuz.label_cikis.setText("0")
     kzarayuz.label_karzarar.setText("0")
+
   else:
 
     # Verileri işleme - list view öğesine döngüyle yerleştirilecek dizeyi oluşturma işlemi
@@ -180,24 +191,14 @@ def alimVerisiIsleme():
       # Hazır veritabanından gelen veriyi işleyen döngü varken alım toplamını  ve hacmini hesaplama -
       # Dizeye ekleme esnasında yan işlem yani.
 
-      alimAdet += satir[1]
-      #alimların kaç tane olduğunu bilmek için, alimAdet global veri, adet ise döngü içindeki veri.
-
+      adetSay += satir[1]
       hacim = round(satir[3] / 1000 * 1002, 2)
-      alimHacim += hacim
-      # alımlarda toplam ne kadar para harcadın, hacim yani
+      hacimSay += hacim
 
-
-      # Tarih verisini dd mm yyyy formatına çevir
-      tarih = satir[0].strftime("%d %m %Y")
-      # adet verisi tanımıyla gerceklenenleri adete çevir
+      tarih = trh(satir[0])
       adet = satir[1]
-
-      # Fiyat verisini binlik ayraçlı sayı formatına çevir ve virgülden sonra 2 basamak göster
-      fiyat = '{:,.2f}'.format(satir[2]).replace(",", "X").replace(".", ",").replace("X", ".")
-
-      # Eder verisini binlik ayraçlı sayı formatına çevir ve virgülden sonra 2 basamak göster
-      eder = '{:,.2f}'.format(hacim).replace(",", "X").replace(".", ",").replace("X", ".")
+      fiyat = vrgnkt(satir[2])
+      eder = vrgnkt(hacim)
 
       # Düzenlenmiş veriyi listeye ekle
       alimVerisiDizeye.append([tarih, adet, fiyat, eder])
@@ -211,11 +212,9 @@ def alimVerisiIsleme():
       for sutunIndeks, sutunVeri in enumerate(satirVeri):
         hucre = QTableWidgetItem(str(sutunVeri))
         if sutunIndeks == 1:
-
           #Ortala
           hucre.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
         else:
-
           # Sağa yasla
           hucre.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
         if sutunIndeks == 0:
@@ -224,27 +223,26 @@ def alimVerisiIsleme():
         kzarayuz.tableWidget_alim.setItem(satirIndeks, sutunIndeks, hucre)
 
     #Saydadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
-
-    alimOrtalamasi = round(alimHacim / alimAdet, 2)
+    toplamAlimAdet = adetSay
+    toplamAlimHacim = hacimSay
+    alimOrtalamasi = round(toplamAlimHacim / toplamAlimAdet, 2)
+    toplamAdet += toplamAlimAdet
 
     kzarayuz.label_alimOrtalama.clear()
     kzarayuz.label_alimOrtalama.setText(str(alimOrtalamasi))
-    global toplamAdet, toplamAlimAdet
-    toplamAdet += alimAdet
+    kzarayuz.label_alimAdet.setText(str(toplamAlimAdet))
 
-    toplamAlimAdet += alimAdet
-    toplamAlimHacim += alimHacim
-
-    kzarayuz.label_alimAdet.setText(str(alimAdet))
 
 
 def satimVerisiIsleme():
   satimAdet = 0
   satimHacim = 0
-  global toplamSatimHacim
+  global toplamSatimAdet, toplamSatimHacim, satimOrtalamasi, toplamAdet
+  toplamSatimAdet = 0
+  satimOrtalamasi = 0
   toplamSatimHacim = 0
 
-  vtimlec.execute(f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S'")
+  vtimlec.execute(f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S' ORDER BY `emirlerim`.`gun` ASC")
   islemIcinGelenSatimlar = vtimlec.fetchall()
   if len(islemIcinGelenSatimlar) == 0:
     kzarayuz.tableWidget_satim.clear()
@@ -264,15 +262,11 @@ def satimVerisiIsleme():
       satimHacim += hacim
 
       # Tarih verisini dd mm yyyy formatına çevir
-      tarih = satir[3].strftime("%d %m %Y")
-      # adet verisi tanımıyla gerceklenenleri adete çevir
+      #tarih = satir[3].strftime("%d %m %Y")
+      tarih = trh(satir[3])
       adet = satir[0]
-
-      # Fiyat verisini binlik ayraçlı sayı formatına çevir ve virgülden sonra 2 basamak göster
-      fiyat = '{:,.2f}'.format(satir[1]).replace(",", "X").replace(".", ",").replace("X", ".")
-
-      # Eder verisini binlik ayraçlı sayı formatına çevir ve virgülden sonra 2 basamak göster
-      eder = '{:,.2f}'.format(hacim).replace(",", "X").replace(".", ",").replace("X", ".")
+      fiyat = vrgnkt(satir[1])
+      eder = vrgnkt(hacim)
 
       # Düzenlenmiş veriyi listeye ekle
       satimVerisiDizeye.append([adet, fiyat, eder, tarih])
@@ -297,28 +291,23 @@ def satimVerisiIsleme():
         kzarayuz.tableWidget_satim.setItem(satirIndeks, sutunIndeks, hucre)
 
     # SayFadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
-    #print("Toplam Satılan Adet:" + str(satimAdet))
-    stmOrtlm = satimHacim / satimAdet
-    print("Stm ortalam sadeleşmeden önce", stmOrtlm)
-    satimOrtalamasiSade = "{:.2f}".format(stmOrtlm)
-    print("Satım Ortalaması sadeleşmiş:" + str(satimOrtalamasiSade))
-    kzarayuz.label_satimOrtalama.clear()
-    kzarayuz.label_satimOrtalama.setText(str(satimOrtalamasiSade))
-    global toplamAdet, toplamSatimAdet, satimOrtalamasi
+
     toplamAdet -= satimAdet
 
-    toplamSatimAdet += satimAdet
-    toplamSatimHacim += satimHacim
-    satimOrtalamasi = stmOrtlm
+    toplamSatimAdet = satimAdet
+    toplamSatimHacim = satimHacim
+    satimOrtalamasi = round(satimHacim / satimAdet, 2)
     #print("Toplam SAtım Hacim :", toplamSatimHacim)
+    kzarayuz.label_satimAdet.clear()
     kzarayuz.label_satimAdet.setText(str(satimAdet))
+    kzarayuz.label_satimOrtalama.clear()
+    kzarayuz.label_satimOrtalama.setText(str(satimOrtalamasi))
 
+"""
 def alimAdediYerlestir():
   kzarayuz.label_alimAdet.setText(str(toplamAlimAdet))
   kzarayuz.label_satimAdet.setText(str(toplamSatimAdet))
-
-
-
+"""
 def adetYerlestir():
   global toplamAdet
   kzarayuz.label_toplamAdet.setText(str(toplamAdet))
@@ -367,6 +356,45 @@ def acilisEkranTemizle():
   kzarayuz.lineEdit_guncelFiyat.clear()
   kzarayuz.lineEdit_sembol.setText(sembol)
 
+def alimsizSembolIslemleri():
+
+  global toplamAdet, toplamAlimAdet, alimOrtalamasi, toplamAlimHacim, toplamSatimAdet, satimOrtalamasi, toplamSatimHacim
+  global sembolFiyat, sembolVarlik, gerceklenen, cikis, karZararYuzdesi
+
+  toplamAdet = 0
+  toplamAlimAdet = 0
+  alimOrtalamasi = 0.00
+  toplamAlimHacim = 0.00
+
+  toplamSatimAdet = 0
+  satimOrtalamasi = 0.00
+  toplamSatimHacim = 0.00
+
+  sembolFiyat = 0.00
+  sembolVarlik = 0.00
+  gerceklenen = 0.00
+  cikis = 0.00
+  karZararYuzdesi = 0
+
+  # Alım ve satım tablolarını boşalt
+  kzarayuz.tableWidget_alim.clear()
+  kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
+  kzarayuz.tableWidget_alim.setRowCount(0)
+  kzarayuz.label_alimAdet.setText("0")
+  kzarayuz.label_satimAdet.setText("0")
+  kzarayuz.label_alimOrtalama.setText("0")
+  kzarayuz.label_satimOrtalama.setText("0")
+  kzarayuz.label_cikis.setText("0")
+  kzarayuz.label_karzarar.setText("0")
+
+def vrgnkt(gel):
+  don = '{:,.2f}'.format(gel).replace(",", "X").replace(".", ",").replace("X", ".")
+  return  don
+
+def trh(gel):
+  don = gel.strftime("%d %m %Y")
+  return don
+
 #-------------------Program başlangıcında çalışacak fonksiyonlar-------------#
 
 kzmodulAnaPencere.show()
@@ -384,3 +412,29 @@ acilisEkranTemizle()
 
 sys.exit(Uygulama.exec_())
 # Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
+
+
+'''
+sayfadaki Q nesneleri her seferinde bunların adları neydi diye QtDesigner açmamak için burda dursun dedim.
+
+label_alimAdet
+label_alimOrtalama
+label_cikis
+label_gerceklenen
+label_karzarar
+label_satimAdet
+label_satimOrtalama
+label_sembolVarlik
+label_toplamAdet
+lineEdit_guncelFiyat
+lineEdit_sembol
+
+listWidget_semboller
+
+tableWidget_alim
+tableWidget_satim
+
+pushButton_sembolGonder
+
+INSERT INTO `semboller` (`sembol_id`, `sembol`, `sembolaciklama`, `sektor`, `bistx`, `arz`) VALUES (NULL, 'HEBE', 'Deneme', 'Hassektör', '69', 'H'); 
+'''
