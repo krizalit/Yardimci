@@ -388,6 +388,9 @@ def hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzde
 
   kzarayuz.lineEdit_guncelFiyat.setText(vrgnkt(sembolFiyat))
 
+def guncelle():
+  gunsonuFiyat.clear()
+  gunsonuFiyatlariOlustur()
 
 
 def vrgnkt(gel):
@@ -415,6 +418,8 @@ sembolleriYerlestir()
 acilisEkranTemizle()
 # En başta bir kere çalışacak. Ekrandaki list widget hariç herşeyi temizliyor.
 
+#"Fiyat Güncelle" butonuna basıldığında fiyatların güncellenmesini sağlar.
+kzarayuz.pushButton_fiyatGuncelle.clicked.connect(guncelle)
 
 sys.exit(Uygulama.exec_())
 # Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
