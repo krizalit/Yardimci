@@ -118,7 +118,7 @@ def hesapKitap():
   else:
     if toplamSatimAdet == 0:
       gerceklenen = 0
-      kzarayuz.label_gerceklenen.setText(str(gerceklenen))
+      #kzarayuz.label_gerceklenen.setText(str(gerceklenen))
     else:
       print("Toplam Alım Adet", toplamAlimAdet, "Toplam Satım Adet", toplamSatimAdet)
       satilanmiktar = toplamAlimAdet - toplamSatimAdet
@@ -168,7 +168,8 @@ def alimVerisiIsleme():
   vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A' ORDER BY `emirlerim`.`gun` ASC")
   islemIcinGelenAlimlar = vtimlec.fetchall()
   if len(islemIcinGelenAlimlar) == 0:
-    kzarayuz.tableWidget_alim.clear()
+    alimsizSembolIslemleri()
+    """kzarayuz.tableWidget_alim.clear()
     kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
     kzarayuz.tableWidget_alim.setRowCount(0)
     kzarayuz.label_alimAdet.setText("0")
@@ -176,7 +177,7 @@ def alimVerisiIsleme():
     kzarayuz.label_alimOrtalama.setText("0")
     kzarayuz.label_satimOrtalama.setText("0")
     kzarayuz.label_cikis.setText("0")
-    kzarayuz.label_karzarar.setText("0")
+    kzarayuz.label_karzarar.setText("0")"""
 
   else:
 
@@ -205,8 +206,8 @@ def alimVerisiIsleme():
 
     # QTableWidget nesnesine veriyi yerleştir
     kzarayuz.tableWidget_alim.clear()
-    kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
-    kzarayuz.tableWidget_alim.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    #kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
+    #kzarayuz.tableWidget_alim.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
     kzarayuz.tableWidget_alim.setRowCount(len(islemIcinGelenAlimlar))
     for satirIndeks, satirVeri in enumerate(alimVerisiDizeye):
       for sutunIndeks, sutunVeri in enumerate(satirVeri):
@@ -245,11 +246,11 @@ def satimVerisiIsleme():
   vtimlec.execute(f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S' ORDER BY `emirlerim`.`gun` ASC")
   islemIcinGelenSatimlar = vtimlec.fetchall()
   if len(islemIcinGelenSatimlar) == 0:
-    kzarayuz.tableWidget_satim.clear()
-    kzarayuz.tableWidget_satim.setHorizontalHeaderLabels(['Adet', 'Fiyat', 'Eder', 'Tarih'])
-    kzarayuz.tableWidget_satim.setRowCount(0)
+    satimsizSembolIslemleri()
+
+    """kzarayuz.tableWidget_satim.setRowCount(0)
     kzarayuz.label_satimAdet.setText("0")
-    kzarayuz.label_gerceklenen.setText("Satım Yok")
+    kzarayuz.label_gerceklenen.setText("Satım Yok")"""
 
   else:
 
@@ -339,6 +340,7 @@ def sembolunFiyatiniOgren(sembol):
     sembolFiyat = 0
   else:
     sembolFiyat = dictebak
+
   #return sembolFiyat
 
 #----------------------------------------------------------------------------#
@@ -355,6 +357,10 @@ def acilisEkranTemizle():
   kzarayuz.label_toplamAdet.clear()
   kzarayuz.lineEdit_guncelFiyat.clear()
   kzarayuz.lineEdit_sembol.setText(sembol)
+
+  kzarayuz.tableWidget_alim.clear()
+  kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
+  kzarayuz.tableWidget_alim.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
 def alimsizSembolIslemleri():
 
@@ -378,7 +384,7 @@ def alimsizSembolIslemleri():
 
   # Alım ve satım tablolarını boşalt
   kzarayuz.tableWidget_alim.clear()
-  kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
+
   kzarayuz.tableWidget_alim.setRowCount(0)
   kzarayuz.label_alimAdet.setText("0")
   kzarayuz.label_satimAdet.setText("0")
@@ -386,6 +392,19 @@ def alimsizSembolIslemleri():
   kzarayuz.label_satimOrtalama.setText("0")
   kzarayuz.label_cikis.setText("0")
   kzarayuz.label_karzarar.setText("0")
+  kzarayuz.lineEdit_guncelFiyat.setText("0")
+
+def satimsizSembolIslemleri():
+  global toplamSatimAdet, toplamSatimHacim, satimOrtalamasi, gerceklenen
+  toplamSatimAdet = 0
+  toplamSatimHacim = 0
+  satimOrtalamasi = 0
+  gerceklenen = 0
+
+  kzarayuz.tableWidget_satim.setRowCount(0)
+  kzarayuz.label_satimAdet.setText("0")
+  kzarayuz.label_satimOrtalama.setText("0")
+  kzarayuz.label_gerceklenen.setText("Satım Yok")
 
 def vrgnkt(gel):
   don = '{:,.2f}'.format(gel).replace(",", "X").replace(".", ",").replace("X", ".")
@@ -408,7 +427,7 @@ sembolleriYerlestir()
 
 acilisEkranTemizle()
 # En başta bir kere çalışacak. Ekrandaki list widget hariç herşeyi temizliyor.
-
+print(gunsonuFiyat.get("TUPRS"))
 
 sys.exit(Uygulama.exec_())
 # Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
