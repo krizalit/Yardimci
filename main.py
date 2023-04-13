@@ -1,5 +1,4 @@
 #--------------------------Kütüphane----------------------#
-#---------------------------------------------------------#
 
 import sys
 #from PyQt5 import QtWidgets
@@ -98,7 +97,10 @@ def seciliSembolIslemleri(item):
   kzarayuz.lineEdit_sembol.setText(sembol)
 
   alimVerisiIsleme()
-  satimVerisiIsleme()
+  if toplamAlimAdet > 0:
+    satimVerisiIsleme()
+  else:
+    satimsizSembolIslemleri()
   sembolunFiyatiniOgren(sembol)
   hesapKitap()
   adetYerlestir()
@@ -107,53 +109,27 @@ def hesapKitap():
   global toplamAdet, toplamAlimAdet, toplamSatimAdet, toplamAlimHacim, toplamSatimHacim, alimOrtalamasi, satimOrtalamasi
   global sembolFiyat, sembolVarlik, gerceklenen, cikis, karZararYuzdesi
   if toplamAlimAdet == 0:
-    kzarayuz.label_cikis.setText("0")
-    kzarayuz.label_sembolVarlik.setText("0")
-    sembolFiyat = 0
-    sembolVarlik = 0
-    cikis = 0
-    karZararYuzdesi = 0
-    gerceklenen = 0
-    print("burda bitmesi gerekiyor.")
+    alimsizSembolIslemleri()
   else:
-    if toplamSatimAdet == 0:
-      gerceklenen = 0
-      kzarayuz.label_gerceklenen.setText(str(gerceklenen))
-    else:
-      print("Toplam Alım Adet", toplamAlimAdet, "Toplam Satım Adet", toplamSatimAdet)
-      satilanmiktar = toplamAlimAdet - toplamSatimAdet
-      satimAlimFarki = satimOrtalamasi - alimOrtalamasi
-      print("Satılan Miktar:", satilanmiktar, "Satım Alım Farkı :", satimAlimFarki)
-      gerceklenen = round(toplamSatimAdet * satimAlimFarki, 2)
+    #gerceklenen'in (realizasyon) hesaplanması
+    satimAlimFarki = satimOrtalamasi - alimOrtalamasi
+    gerceklenen = round(toplamSatimAdet * satimAlimFarki, 2)
 
-      print("Gerçeklenen: ", gerceklenen)
-      print("Toplam Satım Hacim :", toplamSatimHacim)
-      print("Toplam Alım Hacim: ", toplamAlimHacim)
-      print("Toplam alım Adet :", toplamAlimAdet)
+    # güncel fiyata göre hissenin ederinin (varlık) hesaplanması
+    sembolVarlik = round(toplamAdet * sembolFiyat, 2)
 
-      sembolVarlik = round(toplamAdet * sembolFiyat, 2)
-      print("Sembol Varlık :", sembolVarlik)
+    #Çıkışın (güncel fiyattan tüm hisselerin satılması durumu) hesaplanması -
+    # Unutma float ile decimal + - yapılamıyor önce hepsini devimal yapmak gerekiyor.
+    smblvrlk_Decimal = Decimal(sembolVarlik)
+    satimHacim_Decimal = Decimal(toplamSatimHacim)
+    alimHacim_Decimal = Decimal(toplamAlimHacim)
+    cikisDecimal = smblvrlk_Decimal + satimHacim_Decimal - alimHacim_Decimal
+    #toplayabildikten sonra da tekrar floata döndürmek gerekiyor.
+    cikis = round(float(smblvrlk_Decimal + satimHacim_Decimal - alimHacim_Decimal), 2)
+    #kar zarar durumunu yüzde olarak belirtilmesi - kolay işlem ne kadar para yatırdın bu durumda çıkarsan ne kadar paran olacak
+    karZararYuzdesi = round(float(cikisDecimal / alimHacim_Decimal * 100), 2)
 
-      smblvrlk = Decimal(sembolVarlik)
-      tsh = Decimal(toplamSatimHacim)
-      tah = Decimal(toplamAlimHacim)
-      cikis1 = smblvrlk + tsh - tah
-
-
-      cikis = round(float(smblvrlk + tsh - tah), 2)
-      print("Çıkış 1 :", cikis1)
-
-      #cikis = float(sembolVarlik + toplamSatimHacim - toplamAlimHacim)
-      print("Cıkış :", cikis)
-      karZararYuzdesi = round(float(cikis1 / tah * 100), 2)
-      print("Kar zarar", round(karZararYuzdesi, 2))
-      print("SFiyat :", sembolFiyat)
-      varlik = "₺ " + vrgnkt(sembolVarlik)
-      kzarayuz.label_cikis.setText(vrgnkt(cikis))
-      kzarayuz.label_gerceklenen.setText(vrgnkt(gerceklenen))
-      kzarayuz.label_karzarar.setText(str(karZararYuzdesi))
-      kzarayuz.lineEdit_guncelFiyat.setText(vrgnkt(sembolFiyat))
-      kzarayuz.label_sembolVarlik.setText(varlik)
+    hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzdesi)
 
 
 def alimVerisiIsleme():
@@ -168,15 +144,9 @@ def alimVerisiIsleme():
   vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A' ORDER BY `emirlerim`.`gun` ASC")
   islemIcinGelenAlimlar = vtimlec.fetchall()
   if len(islemIcinGelenAlimlar) == 0:
-    kzarayuz.tableWidget_alim.clear()
-    kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
-    kzarayuz.tableWidget_alim.setRowCount(0)
-    kzarayuz.label_alimAdet.setText("0")
-    kzarayuz.label_satimAdet.setText("0")
-    kzarayuz.label_alimOrtalama.setText("0")
-    kzarayuz.label_satimOrtalama.setText("0")
-    kzarayuz.label_cikis.setText("0")
-    kzarayuz.label_karzarar.setText("0")
+
+    alimsizSembolIslemleri()
+
 
   else:
 
@@ -245,12 +215,7 @@ def satimVerisiIsleme():
   vtimlec.execute(f"SELECT `gerceklesen`, `fiyat`, `hacim`, `gun` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'S' ORDER BY `emirlerim`.`gun` ASC")
   islemIcinGelenSatimlar = vtimlec.fetchall()
   if len(islemIcinGelenSatimlar) == 0:
-    kzarayuz.tableWidget_satim.clear()
-    kzarayuz.tableWidget_satim.setHorizontalHeaderLabels(['Adet', 'Fiyat', 'Eder', 'Tarih'])
-    kzarayuz.tableWidget_satim.setRowCount(0)
-    kzarayuz.label_satimAdet.setText("0")
-    kzarayuz.label_gerceklenen.setText("Satım Yok")
-
+    satimsizSembolIslemleri()
   else:
 
     # Verileri işleme
@@ -261,8 +226,6 @@ def satimVerisiIsleme():
       hacim = round(satir[2] / 1000 * 998, 2)
       satimHacim += hacim
 
-      # Tarih verisini dd mm yyyy formatına çevir
-      #tarih = satir[3].strftime("%d %m %Y")
       tarih = trh(satir[3])
       adet = satir[0]
       fiyat = vrgnkt(satir[1])
@@ -297,17 +260,12 @@ def satimVerisiIsleme():
     toplamSatimAdet = satimAdet
     toplamSatimHacim = satimHacim
     satimOrtalamasi = round(satimHacim / satimAdet, 2)
-    #print("Toplam SAtım Hacim :", toplamSatimHacim)
     kzarayuz.label_satimAdet.clear()
     kzarayuz.label_satimAdet.setText(str(satimAdet))
     kzarayuz.label_satimOrtalama.clear()
     kzarayuz.label_satimOrtalama.setText(str(satimOrtalamasi))
 
-"""
-def alimAdediYerlestir():
-  kzarayuz.label_alimAdet.setText(str(toplamAlimAdet))
-  kzarayuz.label_satimAdet.setText(str(toplamSatimAdet))
-"""
+
 def adetYerlestir():
   global toplamAdet
   kzarayuz.label_toplamAdet.setText(str(toplamAdet))
@@ -339,7 +297,6 @@ def sembolunFiyatiniOgren(sembol):
     sembolFiyat = 0
   else:
     sembolFiyat = dictebak
-  #return sembolFiyat
 
 #----------------------------------------------------------------------------#
 
@@ -386,6 +343,52 @@ def alimsizSembolIslemleri():
   kzarayuz.label_satimOrtalama.setText("0")
   kzarayuz.label_cikis.setText("0")
   kzarayuz.label_karzarar.setText("0")
+  kzarayuz.lineEdit_guncelFiyat.setText("0")
+  kzarayuz.label_sembolVarlik.setText("0")
+
+def satimsizSembolIslemleri():
+
+  global toplamSatimAdet, satimOrtalamasi, toplamSatimHacim, gerceklenen
+
+  toplamSatimAdet = 0
+  satimOrtalamasi = 0
+  toplamSatimHacim = 0
+
+  gerceklenen = 0
+
+  # Alım ve satım tablolarını boşalt
+  kzarayuz.tableWidget_satim.clear()
+  kzarayuz.tableWidget_satim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
+  kzarayuz.tableWidget_satim.setRowCount(0)
+  kzarayuz.label_satimAdet.setText("0")
+  kzarayuz.label_satimOrtalama.setText("0")
+  kzarayuz.label_gerceklenen.setText("0")
+
+def hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzdesi):
+
+  varlik_yazisi = tl_ekle(vrgnkt(sembolVarlik))
+  kzarayuz.label_sembolVarlik.setText(varlik_yazisi)
+
+  gerceklenen_yazisi = tl_ekle(vrgnkt(gerceklenen))
+
+  if gerceklenen < 0:
+    kzarayuz.label_gerceklenen.setStyleSheet("color: red")
+  kzarayuz.label_gerceklenen.setText(gerceklenen_yazisi)
+
+  cikis_yazisi = tl_ekle(vrgnkt(cikis))
+
+  if cikis < 0:
+    kzarayuz.label_cikis.setStyleSheet("color: red")
+  kzarayuz.label_cikis.setText(cikis_yazisi)
+
+  if karZararYuzdesi < 0:
+    kzarayuz.label_karzarar.setStyleSheet("color: red")
+  kzyazisi = "% " + str(karZararYuzdesi)
+  kzarayuz.label_karzarar.setText(kzyazisi)
+
+  kzarayuz.lineEdit_guncelFiyat.setText(vrgnkt(sembolFiyat))
+
+
 
 def vrgnkt(gel):
   don = '{:,.2f}'.format(gel).replace(",", "X").replace(".", ",").replace("X", ".")
@@ -395,6 +398,9 @@ def trh(gel):
   don = gel.strftime("%d %m %Y")
   return don
 
+def tl_ekle(gel):
+  don = "₺ " + gel
+  return don
 #-------------------Program başlangıcında çalışacak fonksiyonlar-------------#
 
 kzmodulAnaPencere.show()
@@ -435,6 +441,4 @@ tableWidget_alim
 tableWidget_satim
 
 pushButton_sembolGonder
-
-INSERT INTO `semboller` (`sembol_id`, `sembol`, `sembolaciklama`, `sektor`, `bistx`, `arz`) VALUES (NULL, 'HEBE', 'Deneme', 'Hassektör', '69', 'H'); 
 '''
