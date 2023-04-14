@@ -373,16 +373,22 @@ def hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzde
 
   if gerceklenen < 0:
     kzarayuz.label_gerceklenen.setStyleSheet("color: red")
+  else:
+    kzarayuz.label_gerceklenen.setStyleSheet("color: black")
   kzarayuz.label_gerceklenen.setText(gerceklenen_yazisi)
 
   cikis_yazisi = tl_ekle(vrgnkt(cikis))
 
   if cikis < 0:
     kzarayuz.label_cikis.setStyleSheet("color: red")
+  else:
+    kzarayuz.label_cikis.setStyleSheet("color: black")
   kzarayuz.label_cikis.setText(cikis_yazisi)
 
   if karZararYuzdesi < 0:
     kzarayuz.label_karzarar.setStyleSheet("color: red")
+  else:
+    kzarayuz.label_karzarar.setStyleSheet("color: black")
   kzyazisi = "% " + str(karZararYuzdesi)
   kzarayuz.label_karzarar.setText(kzyazisi)
 
@@ -421,29 +427,62 @@ acilisEkranTemizle()
 #"Fiyat Güncelle" butonuna basıldığında fiyatların güncellenmesini sağlar.
 kzarayuz.pushButton_fiyatGuncelle.clicked.connect(guncelle)
 
+
+"""def sec():
+  secilenSatirlar = kzarayuz.tableWidget_alim.selectedItems()
+  selected_values = list(
+    map(
+      lambda item: item.text(),
+      secilenSatirlar
+    )
+  )
+  print(selected_values)
+
+
+kzarayuz.pushButton_bas.clicked.connect(sec)"""
+
+def sec():
+  secilenSatirlar = kzarayuz.tableWidget_alim.selectedItems()
+  uzun = len(secilenSatirlar)
+
+  ilktarih = secilenSatirlar[0].text()
+  sontarih = secilenSatirlar[uzun-4].text()
+
+  adetler = 0
+  hacimler = 0
+
+  for index in range(0, uzun, 4):
+    adetler += geriCevir(secilenSatirlar[index + 1].text())
+    hacimler += geriCevir(secilenSatirlar[index + 3].text())
+
+  ortalama = round(hacimler / adetler, 2)
+  print(ilktarih, "ve", sontarih, "tarihleri arasında")
+  print("Toplam alınan adet :", round(adetler))
+  print("Alım ortalaması ise", ortalama)
+  print("Toplam hacim ise :", hacimler)
+
+kzarayuz.pushButton_bas.clicked.connect(sec)
+
+def geriCevir(gel):
+  don = float(gel.replace(".", "").replace(",", "."))
+  return don
+
+
+"""def sec():
+  secilenSatirlar = kzarayuz.tableWidget_alim.selectedItems()
+
+  # seçilen sütun içeriklerini bir listeye ekleme
+  selected_values = []
+  for item in secilenSatirlar:
+    selected_values.append(item.text())
+  print(selected_values)
+
+kzarayuz.pushButton_bas.clicked.connect(sec)"""
+#kzarayuz.tableWidget_alim.selectionCommand(sec())
+#kzarayuz.tableWidget_alim.selectRow()
+
 sys.exit(Uygulama.exec_())
 # Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
 
 
-'''
-sayfadaki Q nesneleri her seferinde bunların adları neydi diye QtDesigner açmamak için burda dursun dedim.
 
-label_alimAdet
-label_alimOrtalama
-label_cikis
-label_gerceklenen
-label_karzarar
-label_satimAdet
-label_satimOrtalama
-label_sembolVarlik
-label_toplamAdet
-lineEdit_guncelFiyat
-lineEdit_sembol
-
-listWidget_semboller
-
-tableWidget_alim
-tableWidget_satim
-
-pushButton_sembolGonder
-'''
