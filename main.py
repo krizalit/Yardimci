@@ -2,8 +2,9 @@
 
 import sys
 #from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QCompleter
 from PyQt5.QtGui import QBrush, QColor
 from kzModul import *
 from decimal import Decimal
@@ -65,6 +66,8 @@ cikis = 0.00
 karZararYuzdesi = 0
 # İşte bu çıkışta kar zarar durumunu yüzde olarak gösterir.
 
+tarihAraligiBilgi = QMessageBox()
+
 #-----------Veritabanından çekimlerin tanımlamaları--------------------#
 
 #alimlariCek = f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'"
@@ -80,6 +83,16 @@ def sembolleriYerlestir():
   kzarayuz.listWidget_semboller.clear()
   for smbl in sembolGelenler:
     kzarayuz.listWidget_semboller.addItem(smbl[0])
+
+
+  # Sembol listesinin QCompleter için bir model olarak kullanılması
+  sembol_listesi = [sembol[0] for sembol in sembolGelenler]
+  model = QStringListModel(sembol_listesi)
+  completer = QCompleter(model)
+  completer.setCaseSensitivity(Qt.CaseInsensitive)
+  # Girdi alanına QCompleter eklenmesi
+  kzarayuz.lineEdit_sembolArama.setCompleter(completer)
+
 
   # QListWidget nesnesindeki herhangi bir öğe tıklandığında seciliSembolIslemleri fonksiyonunu çağır
   kzarayuz.listWidget_semboller.itemClicked.connect(seciliSembolIslemleri)
@@ -268,7 +281,8 @@ def satimVerisiIsleme():
 
 def adetYerlestir():
   global toplamAdet
-  kzarayuz.label_toplamAdet.setText(str(toplamAdet))
+  toplamAdetYazisi = "Toplam Adet : " + str(toplamAdet)
+  kzarayuz.label_toplamAdet.setText(toplamAdetYazisi)
 
 
 
@@ -391,8 +405,10 @@ def hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzde
     kzarayuz.label_karzarar.setStyleSheet("color: black")
   kzyazisi = "% " + str(karZararYuzdesi)
   kzarayuz.label_karzarar.setText(kzyazisi)
+  guncelFiyatYazisi = "Güncel Fiyat : ₺" + vrgnkt(sembolFiyat)
 
-  kzarayuz.lineEdit_guncelFiyat.setText(vrgnkt(sembolFiyat))
+  kzarayuz.lineEdit_guncelFiyat.setText(guncelFiyatYazisi)
+  kzarayuz.lineEdit_guncelFiyat.setStyleSheet("font-weight:bold; background-color: rgb(205, 194, 159);")
 
 def guncelle():
   gunsonuFiyat.clear()
@@ -404,7 +420,7 @@ def vrgnkt(gel):
   return  don
 
 def trh(gel):
-  don = gel.strftime("%d %m %Y")
+  don = gel.strftime("%d.%m.%Y")
   return don
 
 def tl_ekle(gel):
@@ -427,62 +443,65 @@ acilisEkranTemizle()
 #"Fiyat Güncelle" butonuna basıldığında fiyatların güncellenmesini sağlar.
 kzarayuz.pushButton_fiyatGuncelle.clicked.connect(guncelle)
 
+def tarihAraligiSecimi():
+  alimUzun = 0
+  satimUzun = 0
+  alimBilgiMesaj = ""
+  alimText = ""
+  secilenAlimSatirlari = kzarayuz.tableWidget_alim.selectedItems()
+  alimUzun = len(secilenAlimSatirlari)
+  if alimUzun > 0:
+    ilkAtarih = secilenAlimSatirlari[0].text()
+    sonAtarih = secilenAlimSatirlari[alimUzun - 4].text()
+    alimAdet = 0
+    alimHacim = 0
+    for index in range(0, alimUzun, 4):
+      alimAdet += geriCevir(secilenAlimSatirlari[index + 1].text())
+      alimHacim += geriCevir(secilenAlimSatirlari[index + 3].text())
+    ortalamaA = round(alimHacim / alimAdet, 2)
+    alimText = '<p style="font-size:14pt; color:green">' + ilkAtarih + ' - - - - - ' + sonAtarih + ' </p>\n \
+                <p style="font-size:14pt; color:green; font-weight:bold">Toplam Adet : ' + str(round(alimAdet)) + '</p> \
+                <p style="font-size:14pt; color:green; font-weight:bold">Alım Ortalaması : ' + str(ortalamaA) + '</p> \
+                <p style="font-size:14pt; color:green; font-weight:bold">Toplam Hacim: ' + vrgnkt(alimHacim) + '</p> '
+  else:
 
-"""def sec():
-  secilenSatirlar = kzarayuz.tableWidget_alim.selectedItems()
-  selected_values = list(
-    map(
-      lambda item: item.text(),
-      secilenSatirlar
-    )
-  )
-  print(selected_values)
+    alimText = '<p style="font-size:13pt;">Alım tarih aralığı seçmediniz.</p>'
+
+  satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
+  secilenSatimSatirlari = kzarayuz.tableWidget_satim.selectedItems()
+  satimUzun = len(secilenSatimSatirlari)
+  print(satimUzun)
+
+  if satimUzun > 0:
+    ilkStarih = secilenSatimSatirlari[3].text()
+    sonStarih = secilenSatimSatirlari[satimUzun-1].text()
+    satimAdet = 0
+    satimHacim = 0
+    for index in range(0, satimUzun, 4):
+      satimAdet += geriCevir(secilenSatimSatirlari[index].text())
+      satimHacim += geriCevir(secilenSatimSatirlari[index + 2].text())
+    ortalamaS = round(satimHacim / satimAdet, 2)
+    satimText = '<p style = "font-size:14pt; color:red; font-weight:bold;" > ' + ilkStarih + ' - - - - - ' + sonStarih + ' </p>\
+                <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Adet: ' + str(round(satimAdet)) + ' </p> \
+                <p style = "font-size:14pt; color:red; font-weight:bold;" > Satım Ortalaması: ' + str(ortalamaS) + ' </p> \
+                <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Hacim: ' + vrgnkt(satimHacim) + ' </p>'
+  else:
+    satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
+
+  fiyatiYaz = '<p style = "font-size:16pt; font-weight:bold;" > <center>Güncel Fiyat : ' + str(sembolFiyat) +  ' </center></p>'
+  alimBilgiMesaj = alimText + fiyatiYaz + satimText
+
+  tarihAraligiBilgi = QMessageBox.about(None, "Bilgilendirme", alimBilgiMesaj)
 
 
-kzarayuz.pushButton_bas.clicked.connect(sec)"""
 
-def sec():
-  secilenSatirlar = kzarayuz.tableWidget_alim.selectedItems()
-  uzun = len(secilenSatirlar)
-
-  ilktarih = secilenSatirlar[0].text()
-  sontarih = secilenSatirlar[uzun-4].text()
-
-  adetler = 0
-  hacimler = 0
-
-  for index in range(0, uzun, 4):
-    adetler += geriCevir(secilenSatirlar[index + 1].text())
-    hacimler += geriCevir(secilenSatirlar[index + 3].text())
-
-  ortalama = round(hacimler / adetler, 2)
-  print(ilktarih, "ve", sontarih, "tarihleri arasında")
-  print("Toplam alınan adet :", round(adetler))
-  print("Alım ortalaması ise", ortalama)
-  print("Toplam hacim ise :", hacimler)
-
-kzarayuz.pushButton_bas.clicked.connect(sec)
+kzarayuz.pushButton_bas.clicked.connect(tarihAraligiSecimi)
 
 def geriCevir(gel):
   don = float(gel.replace(".", "").replace(",", "."))
   return don
 
 
-"""def sec():
-  secilenSatirlar = kzarayuz.tableWidget_alim.selectedItems()
-
-  # seçilen sütun içeriklerini bir listeye ekleme
-  selected_values = []
-  for item in secilenSatirlar:
-    selected_values.append(item.text())
-  print(selected_values)
-
-kzarayuz.pushButton_bas.clicked.connect(sec)"""
-#kzarayuz.tableWidget_alim.selectionCommand(sec())
-#kzarayuz.tableWidget_alim.selectRow()
 
 sys.exit(Uygulama.exec_())
 # Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
-
-
-
