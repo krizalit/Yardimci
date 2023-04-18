@@ -405,9 +405,9 @@ def hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzde
     kzarayuz.label_karzarar.setStyleSheet("color: black")
   kzyazisi = "% " + str(karZararYuzdesi)
   kzarayuz.label_karzarar.setText(kzyazisi)
-  guncelFiyatYazisi = "Güncel Fiyat : ₺" + vrgnkt(sembolFiyat)
+  #guncelFiyatYazisi = "Güncel Fiyat : ₺ " + vrgnkt(sembolFiyat)
 
-  kzarayuz.lineEdit_guncelFiyat.setText(guncelFiyatYazisi)
+  kzarayuz.lineEdit_guncelFiyat.setText(vrgnkt(sembolFiyat))
   kzarayuz.lineEdit_guncelFiyat.setStyleSheet("font-weight:bold; background-color: rgb(205, 194, 159);")
 
 def guncelle():
@@ -419,6 +419,10 @@ def vrgnkt(gel):
   don = '{:,.2f}'.format(gel).replace(",", "X").replace(".", ",").replace("X", ".")
   return  don
 
+def geriCevir(gel):
+  don = float(gel.replace(".", "").replace(",", "."))
+  return don
+
 def trh(gel):
   don = gel.strftime("%d.%m.%Y")
   return don
@@ -426,22 +430,7 @@ def trh(gel):
 def tl_ekle(gel):
   don = "₺ " + gel
   return don
-#-------------------Program başlangıcında çalışacak fonksiyonlar-------------#
 
-kzmodulAnaPencere.show()
-# En baş en baş, ahanda gördüğün pencere bununla oluşuyor.
-
-gunsonuFiyatlariOlustur()
-# Her sembolün bir önceki gün hangi fiyattan kapandığının bilgisini oluşturmaya yarıyor
-
-sembolleriYerlestir()
-# Hani solda aşağı doğru akan liste var ya sembollerin olduğu, ahanda onu oluşturuyor.
-
-acilisEkranTemizle()
-# En başta bir kere çalışacak. Ekrandaki list widget hariç herşeyi temizliyor.
-
-#"Fiyat Güncelle" butonuna basıldığında fiyatların güncellenmesini sağlar.
-kzarayuz.pushButton_fiyatGuncelle.clicked.connect(guncelle)
 
 def tarihAraligiSecimi():
   alimUzun = 0
@@ -491,17 +480,111 @@ def tarihAraligiSecimi():
   fiyatiYaz = '<p style = "font-size:16pt; font-weight:bold;" > <center>Güncel Fiyat : ' + str(sembolFiyat) +  ' </center></p>'
   alimBilgiMesaj = alimText + fiyatiYaz + satimText
 
-  tarihAraligiBilgi = QMessageBox.about(None, "Bilgilendirme", alimBilgiMesaj)
+  #tarihAraligiBilgi = QMessageBox.about(None, "Bilgilendirme", alimBilgiMesaj)
+  tarihAraligiBilgi = QMessageBox()
+  tarihAraligiBilgi.setWindowTitle(sembol)
+  tarihAraligiBilgi.setText(alimBilgiMesaj)
+  tarihAraligiBilgi.setStandardButtons(QMessageBox.Save |QMessageBox.Ok)
+
+  save_button = tarihAraligiBilgi.button(QMessageBox.Save)
+  save_button.setText("Ekle")
+  save_button.clicked.connect(ekle)
+
+  tarihAraligiBilgi.exec_()
 
 
 
 kzarayuz.pushButton_bas.clicked.connect(tarihAraligiSecimi)
 
-def geriCevir(gel):
-  don = float(gel.replace(".", "").replace(",", "."))
-  return don
+def ekle():
+  print("ekle")
+
+class AralikPencere(object):
+
+  def __int__(self, sembol):
+    self.alimAralik = kzarayuz.tableWidget_alim.selectedItems()
+    self.satimAralik = kzarayuz.tableWidget_satim.selectedItems()
+    self.sembol = sembol
+    self.guncelFiyat = sembolunFiyatiniOgren(sembol)
+    self.alimBilgiMesaj = ""
+    self.alimText = ""
+    self.satimText = ""
+
+  def islemler(self):
+    alimUzun = len(self.alimAralik)
+    if alimUzun > 0:
+      ilkAtarih = self.alimAralik[0].text()
+      sonAtarih = self.alimAralik[alimUzun - 4].text()
+      alimAdet = 0
+      alimHacim = 0
+      for index in range(0, alimUzun, 4):
+        alimAdet += geriCevir(self.alimAralik[index + 1].text())
+        alimHacim += geriCevir(self.alimAralik[index + 3].text())
+      ortalamaA = round(alimHacim / alimAdet, 2)
+      self.alimText = '<p style="font-size:14pt; color:green">' + ilkAtarih + ' - - - - - ' + sonAtarih + ' </p>\n \
+                  <p style="font-size:14pt; color:green; font-weight:bold">Toplam Adet : ' + str(round(alimAdet)) + '</p> \
+                  <p style="font-size:14pt; color:green; font-weight:bold">Alım Ortalaması : ' + str(ortalamaA) + '</p> \
+                  <p style="font-size:14pt; color:green; font-weight:bold">Toplam Hacim: ' + vrgnkt(alimHacim) + '</p> '
+    else:
+
+      self.alimText = '<p style="font-size:13pt;">Alım tarih aralığı seçmediniz.</p>'
+
+    self.satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
+    self.satimAralik = kzarayuz.tableWidget_satim.selectedItems()
+    satimUzun = len(self.satimAralik)
+    print(satimUzun)
+    if satimUzun > 0:
+      ilkStarih = self.satimAralik[3].text()
+      sonStarih = self.satimAralik[satimUzun - 1].text()
+      satimAdet = 0
+      satimHacim = 0
+      for index in range(0, satimUzun, 4):
+        satimAdet += geriCevir(self.satimAralik[index].text())
+        satimHacim += geriCevir(self.satimAralik[index + 2].text())
+      ortalamaS = round(satimHacim / satimAdet, 2)
+      self.satimText = '<p style = "font-size:14pt; color:red; font-weight:bold;" > ' + ilkStarih + ' - - - - - ' + sonStarih + ' </p>\
+                  <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Adet: ' + str(round(satimAdet)) + ' </p> \
+                  <p style = "font-size:14pt; color:red; font-weight:bold;" > Satım Ortalaması: ' + str(ortalamaS) + ' </p> \
+                  <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Hacim: ' + vrgnkt(satimHacim) + ' </p>'
+    else:
+      self.satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
+
+  def mesajHazirla(self):
+    self.fiyatiYaz = '<p style = "font-size:16pt; font-weight:bold;" > <center>Güncel Fiyat : ' + str(sembolFiyat) + ' </center></p>'
+    self.alimBilgiMesaj = self.alimText + self.fiyatiYaz + self.satimText
+
+  #fiyatiYaz = '<p style = "font-size:16pt; font-weight:bold;" > <center>Güncel Fiyat : ' + str(sembolFiyat) + ' </center></p>'
+  #alimBilgiMesaj = self.alimText + fiyatiYaz + self.satimText
 
 
+
+  def acilir(self):
+    self.pencere = QMessageBox()
+    self.pencere.setWindowTitle(sembol)
+    self.pencere.setText(self.alimBilgiMesaj)
+    self.pencere.setStandardButtons(QMessageBox.Save | QMessageBox.Ok)
+    self.save_button = self.pencere.button(QMessageBox.Save)
+    self.save_button.setText("Ekle")
+    self.save_button.clicked.connect(ekle)
+
+#-------------------Program başlangıcında çalışacak fonksiyonlar-------------#
+
+kzmodulAnaPencere.show()
+# En baş en baş, ahanda gördüğün pencere bununla oluşuyor.
+
+gunsonuFiyatlariOlustur()
+# Her sembolün bir önceki gün hangi fiyattan kapandığının bilgisini oluşturmaya yarıyor
+
+sembolleriYerlestir()
+# Hani solda aşağı doğru akan liste var ya sembollerin olduğu, ahanda onu oluşturuyor.
+
+acilisEkranTemizle()
+# En başta bir kere çalışacak. Ekrandaki list widget hariç herşeyi temizliyor.
+
+#"Fiyat Güncelle" butonuna basıldığında fiyatların güncellenmesini sağlar.
+kzarayuz.pushButton_fiyatGuncelle.clicked.connect(guncelle)
 
 sys.exit(Uygulama.exec_())
 # Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
+
+
