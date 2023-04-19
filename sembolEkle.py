@@ -34,12 +34,24 @@ def ekleme():
     arzMi = "E"
   else:
     arzMi = "H"
-  alimLot = float(ekleArayuz.lineEdit_alinanLot.text())
-  alimFiyati = float(ekleArayuz.lineEdit_alimFiyati.text())
+  alimLot = int(ekleArayuz.lineEdit_alinanLot.text())
+  alimFiyati = float(ekleArayuz.lineEdit_alimFiyati.text().replace(",", "."))
   tarih = ekleArayuz.dateEdit_tarih.date().toPyDate()
   hacim = alimLot * alimFiyati
-  vtimlec.execute(f"INSERT INTO `semboller`(`sembol`, `sembolaciklama`, `sektor`, `bistx`, `arz`) VALUES ('{sembol}','{sembolAciklama}','{sektor}','{bistx}','{arzMi}')")
-  vtimlec.execute(f"INSERT INTO `emirlerim`(`sembol`, `alsat`, `fiyat`, `gerceklesen`, `hacim`,  `gun`) VALUES ('{sembol}','A','{alimFiyati}','{alimLot}','{hacim}','{tarih}')")
+  vtimlec.execute(f"SELECT * FROM `semboller` WHERE `sembol` = '{sembol}'")
+  varmiSorgusu = vtimlec.fetchall()
+  varMi = len(varmiSorgusu)
+  if varMi == 0:
+    print("yok")
+    vtimlec.execute(f"INSERT INTO `semboller`(`sembol`, `sembolaciklama`, `sektor`, `bistx`, `arz`) VALUES ('{sembol}','{sembolAciklama}','{sektor}','{bistx}','{arzMi}')")
+    vtimlec.execute(f"INSERT INTO `emirlerim`(`sembol`, `alsat`, `fiyat`, `gerceklesen`, `hacim`,  `gun`) VALUES ('{sembol}','A','{alimFiyati}','{alimLot}','{hacim}','{tarih}')")
+    baglanti.commit()
+
+  else:
+    vtimlec.execute(f"INSERT INTO `emirlerim`(`sembol`, `alsat`, `fiyat`, `gerceklesen`, `hacim`,  `gun`) VALUES ('{sembol}','A','{alimFiyati}','{alimLot}','{hacim}','{tarih}')")
+    baglanti.commit()
+    print("var")
+
 
 
 
@@ -59,5 +71,5 @@ SELECT * FROM `semboller` WHERE `sembol` = 'KOPOL'
 DELETE FROM semboller WHERE `semboller`.`sembol_id` = 176" 
 INSERT INTO `semboller`(`sembol`, `sembolaciklama`, `sektor`, `bistx`, `arz`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]')
 
-
+INSERT INTO `semboller`(`sembol`, `sembolaciklama`, `sektor`, `bistx`, `arz`) VALUES ('[value-2]','[value-3]','[value-4]','[value-5]','[value-6]')
 """
