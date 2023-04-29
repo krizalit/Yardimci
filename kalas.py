@@ -127,11 +127,6 @@ def yuzdePayGuncelle():
     yzpay = yuzdePay[anahtar]['yzpay']
     borsaDurumVerileri[anahtar]['yzpay'] = round(yzpay * 100 / varlik ,3)
 
-def borsaDurumSozluguGuncelle():
-  for anahtar in yuzdePay:
-    guncel = yuzdePay[anahtar]['yzpay']
-    borsaDurumVerileri[anahtar]['yzpay'] = guncel
-
 
 borsaDurumSozluguOlustur()
 print(borsaDurumVerileri)
@@ -142,7 +137,7 @@ print(borsaDurumVerileri)
 
 
 
-#-----------------------------------------------------------------------
+#-------------------------Bu tabloya ekleme döngüsü için ama daha qwidget çözülmedi------------------------------
 
 class MyTable(QWidget):
   def __init__(self, borsaDurumVerileri):
@@ -195,7 +190,7 @@ class MyTable(QWidget):
 
 
 
-MyTable(borsaDurumVerileri)
+
 
 
 
