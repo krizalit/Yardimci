@@ -1,15 +1,15 @@
 #--------------------------Kütüphane----------------------#
-
 import sys
-#from PyQt5 import QtWidgets
+
 from PyQt5.QtCore import Qt, QStringListModel
 from PyQt5.QtWidgets import *
-from PyQt5.QtWidgets import QCompleter
+
 from PyQt5.QtGui import QBrush, QColor
-from kzModul import *
-from decimal import Decimal
+from kzModulK import *
+from fonk import *
+#from kalas import *
+
 import xlrd
-#import decimal
 
 Uygulama = QApplication(sys.argv)
 kzmodulAnaPencere = QMainWindow()
@@ -66,8 +66,6 @@ cikis = 0.00
 karZararYuzdesi = 0
 # İşte bu çıkışta kar zarar durumunu yüzde olarak gösterir.
 
-tarihAraligiBilgi = QMessageBox()
-
 #-----------Veritabanından çekimlerin tanımlamaları--------------------#
 
 #alimlariCek = f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A'"
@@ -83,26 +81,16 @@ def sembolleriYerlestir():
   kzarayuz.listWidget_semboller.clear()
   for smbl in sembolGelenler:
     kzarayuz.listWidget_semboller.addItem(smbl[0])
-
-
-  # Sembol listesinin QCompleter için bir model olarak kullanılması
-  sembol_listesi = [sembol[0] for sembol in sembolGelenler]
-  model = QStringListModel(sembol_listesi)
-  completer = QCompleter(model)
-  completer.setCaseSensitivity(Qt.CaseInsensitive)
-  # Girdi alanına QCompleter eklenmesi
-  kzarayuz.lineEdit_sembolArama.setCompleter(completer)
+  print(sembolGelenler)
 
 
   # QListWidget nesnesindeki herhangi bir öğe tıklandığında seciliSembolIslemleri fonksiyonunu çağır
   kzarayuz.listWidget_semboller.itemClicked.connect(seciliSembolIslemleri)
 
-
 def seciliSembolIslemleri(item):
   global toplamAdet, toplamAlimAdet
   toplamAdet = 0
   toplamAlimAdet = 0
-
 
   # üstteki sembol lineEditine sembol adını yaz
   global sembol
@@ -124,26 +112,19 @@ def hesapKitap():
   if toplamAlimAdet == 0:
     alimsizSembolIslemleri()
   else:
-    #gerceklenen'in (realizasyon) hesaplanması
+    # gerceklenen'in (realizasyon) hesaplanması
     satimAlimFarki = satimOrtalamasi - alimOrtalamasi
     gerceklenen = round(toplamSatimAdet * satimAlimFarki, 2)
 
     # güncel fiyata göre hissenin ederinin (varlık) hesaplanması
     sembolVarlik = round(toplamAdet * sembolFiyat, 2)
 
-    #Çıkışın (güncel fiyattan tüm hisselerin satılması durumu) hesaplanması -
-    # Unutma float ile decimal + - yapılamıyor önce hepsini devimal yapmak gerekiyor.
-    smblvrlk_Decimal = Decimal(sembolVarlik)
-    satimHacim_Decimal = Decimal(toplamSatimHacim)
-    alimHacim_Decimal = Decimal(toplamAlimHacim)
-    cikisDecimal = smblvrlk_Decimal + satimHacim_Decimal - alimHacim_Decimal
-    #toplayabildikten sonra da tekrar floata döndürmek gerekiyor.
-    cikis = round(float(smblvrlk_Decimal + satimHacim_Decimal - alimHacim_Decimal), 2)
-    #kar zarar durumunu yüzde olarak belirtilmesi - kolay işlem ne kadar para yatırdın bu durumda çıkarsan ne kadar paran olacak
-    karZararYuzdesi = round(float(cikisDecimal / alimHacim_Decimal * 100), 2)
+    # Çıkışın (güncel fiyattan tüm hisselerin satılması durumu) hesaplanması -----#
+    cikis = round(sembolVarlik + toplamSatimHacim - toplamAlimHacim, 2)
+    # kar zarar durumunu yüzde olarak belirtilmesi - kolay işlem ne kadar para yatırdın bu durumda çıkarsan ne kadar paran olacak
+    karZararYuzdesi = round(cikis / toplamAlimHacim * 100, 2)
 
     hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzdesi)
-
 
 def alimVerisiIsleme():
   adetSay = 0
@@ -157,23 +138,16 @@ def alimVerisiIsleme():
   vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{sembol}' AND `alsat` = 'A' ORDER BY `emirlerim`.`gun` ASC")
   islemIcinGelenAlimlar = vtimlec.fetchall()
   if len(islemIcinGelenAlimlar) == 0:
-
     alimsizSembolIslemleri()
-
-
   else:
-
     # Verileri işleme - list view öğesine döngüyle yerleştirilecek dizeyi oluşturma işlemi
     # Neden dizeye ekliyorsun dersen listview eklenmesi biraz karışık işlem her sütun satır için ayrı hücre oluşturuyor
     # o yüzden vritabanından gelen veriyi direk lisviewa ekleyemiyoruz. aşağıda satirIndeks satirVeri
     # sutunIndeks sütunVeri filan işlemden anlayacaksın.
-
     alimVerisiDizeye = []
     for satir in islemIcinGelenAlimlar:
-
       # Hazır veritabanından gelen veriyi işleyen döngü varken alım toplamını  ve hacmini hesaplama -
       # Dizeye ekleme esnasında yan işlem yani.
-
       adetSay += satir[1]
       hacim = round(satir[3] / 1000 * 1002, 2)
       hacimSay += hacim
@@ -186,10 +160,21 @@ def alimVerisiIsleme():
       # Düzenlenmiş veriyi listeye ekle
       alimVerisiDizeye.append([tarih, adet, fiyat, eder])
 
+    # Saydadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
+    toplamAlimAdet = adetSay
+    toplamAlimHacim = hacimSay
+    alimOrtalamasi = round(toplamAlimHacim / toplamAlimAdet, 2)
+    toplamAdet += toplamAlimAdet
+
+    kzarayuz.label_alimOrtalama.clear()
+    kzarayuz.label_alimOrtalama.setText(str(alimOrtalamasi))
+    kzarayuz.label_alimAdet.setText(str(toplamAlimAdet))
+
     # QTableWidget nesnesine veriyi yerleştir
     kzarayuz.tableWidget_alim.clear()
-    kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
+    kzarayuz.tableWidget_alim.setHorizontalHeaderLabels(['Tarih', str(toplamAlimAdet), vrgnkt(alimOrtalamasi), vrgnkt(hacimSay)])
     kzarayuz.tableWidget_alim.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    kzarayuz.tableWidget_alim.horizontalHeader().setStyleSheet("font-weight: bold;")
     kzarayuz.tableWidget_alim.setRowCount(len(islemIcinGelenAlimlar))
     for satirIndeks, satirVeri in enumerate(alimVerisiDizeye):
       for sutunIndeks, sutunVeri in enumerate(satirVeri):
@@ -204,18 +189,6 @@ def alimVerisiIsleme():
           hucre.setBackground(QBrush(QColor(242, 237, 221)))
         # Hücreyi tabloya yerleştir
         kzarayuz.tableWidget_alim.setItem(satirIndeks, sutunIndeks, hucre)
-
-    #Saydadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
-    toplamAlimAdet = adetSay
-    toplamAlimHacim = hacimSay
-    alimOrtalamasi = round(toplamAlimHacim / toplamAlimAdet, 2)
-    toplamAdet += toplamAlimAdet
-
-    kzarayuz.label_alimOrtalama.clear()
-    kzarayuz.label_alimOrtalama.setText(str(alimOrtalamasi))
-    kzarayuz.label_alimAdet.setText(str(toplamAlimAdet))
-
-
 
 def satimVerisiIsleme():
   satimAdet = 0
@@ -247,10 +220,23 @@ def satimVerisiIsleme():
       # Düzenlenmiş veriyi listeye ekle
       satimVerisiDizeye.append([adet, fiyat, eder, tarih])
 
+    # SayFadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
+
+    toplamAdet -= satimAdet
+
+    toplamSatimAdet = satimAdet
+    toplamSatimHacim = satimHacim
+    satimOrtalamasi = round(satimHacim / satimAdet, 2)
+    kzarayuz.label_satimAdet.clear()
+    kzarayuz.label_satimAdet.setText(str(satimAdet))
+    kzarayuz.label_satimOrtalama.clear()
+    kzarayuz.label_satimOrtalama.setText(str(satimOrtalamasi))
+
     # QTableWidget nesnesine veriyi yerleştir
     kzarayuz.tableWidget_satim.clear()
-    kzarayuz.tableWidget_satim.setHorizontalHeaderLabels([ 'Adet', 'Fiyat', 'Eder', 'Tarih'])
+    kzarayuz.tableWidget_satim.setHorizontalHeaderLabels([str(toplamSatimAdet), vrgnkt(satimOrtalamasi), vrgnkt(toplamSatimHacim), 'Tarih'])
     kzarayuz.tableWidget_satim.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    kzarayuz.tableWidget_satim.horizontalHeader().setStyleSheet("font-weight: bold;")
     kzarayuz.tableWidget_satim.setRowCount(len(islemIcinGelenSatimlar))
     for satirIndeks, satirVeri in enumerate(satimVerisiDizeye):
       for sutunIndeks, sutunVeri in enumerate(satirVeri):
@@ -266,25 +252,10 @@ def satimVerisiIsleme():
         # Hücreyi tabloya yerleştir
         kzarayuz.tableWidget_satim.setItem(satirIndeks, sutunIndeks, hucre)
 
-    # SayFadaki diğer işlemlerde kullanılacak değişken değerlerinin oluşması ve yerleşmesi
-
-    toplamAdet -= satimAdet
-
-    toplamSatimAdet = satimAdet
-    toplamSatimHacim = satimHacim
-    satimOrtalamasi = round(satimHacim / satimAdet, 2)
-    kzarayuz.label_satimAdet.clear()
-    kzarayuz.label_satimAdet.setText(str(satimAdet))
-    kzarayuz.label_satimOrtalama.clear()
-    kzarayuz.label_satimOrtalama.setText(str(satimOrtalamasi))
-
-
 def adetYerlestir():
   global toplamAdet
-  toplamAdetYazisi = "Toplam Adet : " + str(toplamAdet)
+  toplamAdetYazisi = 'Toplam Adet : <b>' + str(toplamAdet) + '</b>'
   kzarayuz.label_toplamAdet.setText(toplamAdetYazisi)
-
-
 
 #-------------------Fiyat oluşturma ve öğrenme bölümü------------------------#
 
@@ -326,6 +297,7 @@ def acilisEkranTemizle():
   kzarayuz.label_toplamAdet.clear()
   kzarayuz.lineEdit_guncelFiyat.clear()
   kzarayuz.lineEdit_sembol.setText(sembol)
+  kzarayuz.gnclfyt.clear()
 
 def alimsizSembolIslemleri():
 
@@ -372,7 +344,7 @@ def satimsizSembolIslemleri():
 
   # Alım ve satım tablolarını boşalt
   kzarayuz.tableWidget_satim.clear()
-  kzarayuz.tableWidget_satim.setHorizontalHeaderLabels(['Tarih', 'Adet', 'Fiyat', 'Eder'])
+  kzarayuz.tableWidget_satim.setHorizontalHeaderLabels(['Adet', 'Fiyat', 'Eder', 'Tarih'])
   kzarayuz.tableWidget_satim.setRowCount(0)
   kzarayuz.label_satimAdet.setText("0")
   kzarayuz.label_satimOrtalama.setText("0")
@@ -386,7 +358,7 @@ def hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzde
   gerceklenen_yazisi = tl_ekle(vrgnkt(gerceklenen))
 
   if gerceklenen < 0:
-    kzarayuz.label_gerceklenen.setStyleSheet("color: red")
+    kzarayuz.label_gerceklenen.setStyleSheet("color: rgb(244, 0, 0)")
   else:
     kzarayuz.label_gerceklenen.setStyleSheet("color: black")
   kzarayuz.label_gerceklenen.setText(gerceklenen_yazisi)
@@ -394,42 +366,27 @@ def hesapkitapSonrasiYerlesimler(sembolVarlik, gerceklenen, cikis, karZararYuzde
   cikis_yazisi = tl_ekle(vrgnkt(cikis))
 
   if cikis < 0:
-    kzarayuz.label_cikis.setStyleSheet("color: red")
+    kzarayuz.label_cikis.setStyleSheet("color: rgb(244, 0, 0)")
   else:
     kzarayuz.label_cikis.setStyleSheet("color: black")
   kzarayuz.label_cikis.setText(cikis_yazisi)
 
   if karZararYuzdesi < 0:
-    kzarayuz.label_karzarar.setStyleSheet("color: red")
+    kzarayuz.label_karzarar.setStyleSheet("color: rgb(244, 0, 0)")
   else:
     kzarayuz.label_karzarar.setStyleSheet("color: black")
-  kzyazisi = "% " + str(karZararYuzdesi)
+  kzyazisi = '% <b>' + str(karZararYuzdesi) + '</b>'
   kzarayuz.label_karzarar.setText(kzyazisi)
   #guncelFiyatYazisi = "Güncel Fiyat : ₺ " + vrgnkt(sembolFiyat)
 
   kzarayuz.lineEdit_guncelFiyat.setText(vrgnkt(sembolFiyat))
   kzarayuz.lineEdit_guncelFiyat.setStyleSheet("font-weight:bold; background-color: rgb(205, 194, 159);")
+  kzarayuz.gnclfyt.setText("Güncel Fiyat :")
 
 def guncelle():
   gunsonuFiyat.clear()
   gunsonuFiyatlariOlustur()
 
-
-def vrgnkt(gel):
-  don = '{:,.2f}'.format(gel).replace(",", "X").replace(".", ",").replace("X", ".")
-  return  don
-
-def geriCevir(gel):
-  don = float(gel.replace(".", "").replace(",", "."))
-  return don
-
-def trh(gel):
-  don = gel.strftime("%d.%m.%Y")
-  return don
-
-def tl_ekle(gel):
-  don = "₺ " + gel
-  return don
 
 
 def tarihAraligiSecimi():
@@ -449,17 +406,15 @@ def tarihAraligiSecimi():
       alimHacim += geriCevir(secilenAlimSatirlari[index + 3].text())
     ortalamaA = round(alimHacim / alimAdet, 2)
     alimText = '<p style="font-size:14pt; color:green">' + ilkAtarih + ' - - - - - ' + sonAtarih + ' </p>\n \
-                <p style="font-size:14pt; color:green; font-weight:bold">Toplam Adet : ' + str(round(alimAdet)) + '</p> \
-                <p style="font-size:14pt; color:green; font-weight:bold">Alım Ortalaması : ' + str(ortalamaA) + '</p> \
-                <p style="font-size:14pt; color:green; font-weight:bold">Toplam Hacim: ' + vrgnkt(alimHacim) + '</p> '
+                <p style="font-size:14pt; color:green;">Toplam Adet : <b>' + str(round(alimAdet)) + '</b></p> \
+                <p style="font-size:14pt; color:green;">Alım Ortalaması : <b>' + str(ortalamaA) + '</b></p> \
+                <p style="font-size:14pt; color:green;">Toplam Hacim: <b>' + vrgnkt(alimHacim) + '</b></p> '
   else:
-
     alimText = '<p style="font-size:13pt;">Alım tarih aralığı seçmediniz.</p>'
 
   satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
   secilenSatimSatirlari = kzarayuz.tableWidget_satim.selectedItems()
   satimUzun = len(secilenSatimSatirlari)
-  print(satimUzun)
 
   if satimUzun > 0:
     ilkStarih = secilenSatimSatirlari[3].text()
@@ -470,12 +425,12 @@ def tarihAraligiSecimi():
       satimAdet += geriCevir(secilenSatimSatirlari[index].text())
       satimHacim += geriCevir(secilenSatimSatirlari[index + 2].text())
     ortalamaS = round(satimHacim / satimAdet, 2)
-    satimText = '<p style = "font-size:14pt; color:red; font-weight:bold;" > ' + ilkStarih + ' - - - - - ' + sonStarih + ' </p>\
-                <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Adet: ' + str(round(satimAdet)) + ' </p> \
-                <p style = "font-size:14pt; color:red; font-weight:bold;" > Satım Ortalaması: ' + str(ortalamaS) + ' </p> \
-                <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Hacim: ' + vrgnkt(satimHacim) + ' </p>'
+    satimText = '<p style = "font-size:14pt; color:red;" > ' + ilkStarih + ' - - - - - ' + sonStarih + ' </p>\
+                <p style = "font-size:14pt; color:red;" > Toplam Adet: <b>' + str(round(satimAdet)) + '</b> </p> \
+                <p style = "font-size:14pt; color:red;" > Satım Ortalaması: <b>' + str(ortalamaS) + '</b> </p> \
+                <p style = "font-size:14pt; color:red;" > Toplam Hacim: <b>' + vrgnkt(satimHacim) + '</b> </p>'
   else:
-    satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
+    satimText = '<p style="font-size:13pt;">Satım tarih aralığı seçmediniz.</p>'
 
   fiyatiYaz = '<p style = "font-size:16pt; font-weight:bold;" > <center>Güncel Fiyat : ' + str(sembolFiyat) +  ' </center></p>'
   alimBilgiMesaj = alimText + fiyatiYaz + satimText
@@ -484,6 +439,7 @@ def tarihAraligiSecimi():
   tarihAraligiBilgi = QMessageBox()
   tarihAraligiBilgi.setWindowTitle(sembol)
   tarihAraligiBilgi.setText(alimBilgiMesaj)
+
   tarihAraligiBilgi.setStandardButtons(QMessageBox.Save |QMessageBox.Ok)
 
   save_button = tarihAraligiBilgi.button(QMessageBox.Save)
@@ -492,80 +448,10 @@ def tarihAraligiSecimi():
 
   tarihAraligiBilgi.exec_()
 
-
-
 kzarayuz.pushButton_bas.clicked.connect(tarihAraligiSecimi)
 
 def ekle():
   print("ekle")
-
-class AralikPencere(object):
-
-  def __int__(self, sembol):
-    self.alimAralik = kzarayuz.tableWidget_alim.selectedItems()
-    self.satimAralik = kzarayuz.tableWidget_satim.selectedItems()
-    self.sembol = sembol
-    self.guncelFiyat = sembolunFiyatiniOgren(sembol)
-    self.alimBilgiMesaj = ""
-    self.alimText = ""
-    self.satimText = ""
-
-  def islemler(self):
-    alimUzun = len(self.alimAralik)
-    if alimUzun > 0:
-      ilkAtarih = self.alimAralik[0].text()
-      sonAtarih = self.alimAralik[alimUzun - 4].text()
-      alimAdet = 0
-      alimHacim = 0
-      for index in range(0, alimUzun, 4):
-        alimAdet += geriCevir(self.alimAralik[index + 1].text())
-        alimHacim += geriCevir(self.alimAralik[index + 3].text())
-      ortalamaA = round(alimHacim / alimAdet, 2)
-      self.alimText = '<p style="font-size:14pt; color:green">' + ilkAtarih + ' - - - - - ' + sonAtarih + ' </p>\n \
-                  <p style="font-size:14pt; color:green; font-weight:bold">Toplam Adet : ' + str(round(alimAdet)) + '</p> \
-                  <p style="font-size:14pt; color:green; font-weight:bold">Alım Ortalaması : ' + str(ortalamaA) + '</p> \
-                  <p style="font-size:14pt; color:green; font-weight:bold">Toplam Hacim: ' + vrgnkt(alimHacim) + '</p> '
-    else:
-
-      self.alimText = '<p style="font-size:13pt;">Alım tarih aralığı seçmediniz.</p>'
-
-    self.satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
-    self.satimAralik = kzarayuz.tableWidget_satim.selectedItems()
-    satimUzun = len(self.satimAralik)
-    print(satimUzun)
-    if satimUzun > 0:
-      ilkStarih = self.satimAralik[3].text()
-      sonStarih = self.satimAralik[satimUzun - 1].text()
-      satimAdet = 0
-      satimHacim = 0
-      for index in range(0, satimUzun, 4):
-        satimAdet += geriCevir(self.satimAralik[index].text())
-        satimHacim += geriCevir(self.satimAralik[index + 2].text())
-      ortalamaS = round(satimHacim / satimAdet, 2)
-      self.satimText = '<p style = "font-size:14pt; color:red; font-weight:bold;" > ' + ilkStarih + ' - - - - - ' + sonStarih + ' </p>\
-                  <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Adet: ' + str(round(satimAdet)) + ' </p> \
-                  <p style = "font-size:14pt; color:red; font-weight:bold;" > Satım Ortalaması: ' + str(ortalamaS) + ' </p> \
-                  <p style = "font-size:14pt; color:red; font-weight:bold;" > Toplam Hacim: ' + vrgnkt(satimHacim) + ' </p>'
-    else:
-      self.satimText = '<p style="font-size:14pt;">Satım tarih aralığı seçmediniz.</p>'
-
-  def mesajHazirla(self):
-    self.fiyatiYaz = '<p style = "font-size:16pt; font-weight:bold;" > <center>Güncel Fiyat : ' + str(sembolFiyat) + ' </center></p>'
-    self.alimBilgiMesaj = self.alimText + self.fiyatiYaz + self.satimText
-
-  #fiyatiYaz = '<p style = "font-size:16pt; font-weight:bold;" > <center>Güncel Fiyat : ' + str(sembolFiyat) + ' </center></p>'
-  #alimBilgiMesaj = self.alimText + fiyatiYaz + self.satimText
-
-
-
-  def acilir(self):
-    self.pencere = QMessageBox()
-    self.pencere.setWindowTitle(sembol)
-    self.pencere.setText(self.alimBilgiMesaj)
-    self.pencere.setStandardButtons(QMessageBox.Save | QMessageBox.Ok)
-    self.save_button = self.pencere.button(QMessageBox.Save)
-    self.save_button.setText("Ekle")
-    self.save_button.clicked.connect(ekle)
 
 #-------------------Program başlangıcında çalışacak fonksiyonlar-------------#
 
@@ -588,3 +474,6 @@ sys.exit(Uygulama.exec_())
 # Valla ne yalan söyliyim, bu sys exit ne bok yer hiç bir fikrim yok. Ama gerekyior sanırım. #
 
 
+######################      SQL Sorguları        ##################################
+
+#    SELECT * FROM `semboller` ORDER BY `semboller`.`sektor` , `semboller`.`sembol` ASC;

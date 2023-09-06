@@ -56,6 +56,8 @@ class Ui_Form(object):
         self.label_alimOrtalama.setGeometry(QtCore.QRect(400, 119, 91, 21))
         font = QtGui.QFont()
         font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
         self.label_alimOrtalama.setFont(font)
         self.label_alimOrtalama.setStyleSheet("background-color: rgb(238, 250, 235);\n"
 "color: rgb(0, 0, 0);")
@@ -74,6 +76,8 @@ class Ui_Form(object):
         self.label_satimOrtalama.setGeometry(QtCore.QRect(790, 120, 91, 20))
         font = QtGui.QFont()
         font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
         self.label_satimOrtalama.setFont(font)
         self.label_satimOrtalama.setStyleSheet("background-color: rgb(252, 214, 214);\n"
 "color: rgb(0, 0, 0);\n"
@@ -220,6 +224,8 @@ class Ui_Form(object):
         self.label_satimAdet.setGeometry(QtCore.QRect(600, 120, 91, 20))
         font = QtGui.QFont()
         font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
         self.label_satimAdet.setFont(font)
         self.label_satimAdet.setStyleSheet("background-color: rgb(252, 214, 214);\n"
 "color: rgb(0, 0, 0);")
@@ -229,6 +235,8 @@ class Ui_Form(object):
         self.label_alimAdet.setGeometry(QtCore.QRect(210, 119, 101, 21))
         font = QtGui.QFont()
         font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
         self.label_alimAdet.setFont(font)
         self.label_alimAdet.setStyleSheet("background-color: rgb(238, 250, 235);\n"
 "color: rgb(0, 0, 0);")
