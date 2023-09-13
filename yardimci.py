@@ -1,5 +1,6 @@
 import sys
 import os
+from PyQt5.QtCore import QDate
 import datetime
 import mysql.connector
 import xlrd
@@ -53,7 +54,9 @@ def gunsonuFiyatlariOlustur():
     smbl = worksheet.cell_value(i, 0)
     fyt = worksheet.cell_value(i, 3)
     gunsonuFiyat[smbl] = fyt
+  print(gunsonuFiyat)
   return gunsonuFiyat
+
 
 def sembolunFiyatiniOgren(sembol):
   # her sembol için gunsonuFiyat dict inden fiyat bilgisini alan fonksiyon
@@ -205,23 +208,28 @@ def yeniOlustur():
   gunsonuFiyat = {}
   borsaDurumVerileri = {}
   gunsonuFiyatlariOlustur()
-  fiyat = float(yrmdcAryz.lineEdit_altnFyt.text().replace(",", "."))
-  gunsonuFiyat['ALTIN'] = fiyat
   borsaDurumSozluguOlustur()
   yuzdePayGuncelle()
   borsa_durum_tablosu_olustur(yrmdcAryz.tableWidget_borsaDurum, borsaDurumVerileri)
   borsa_cikilmislarTablosuOlustur(yrmdcAryz.tableWidget_cikilmisDurum, cikilmisKagitlar)
 
-def altnFyt ():
+def baslangicDegerleriOlusturma():
   global borsaDurumVerileri
   global gunsonuFiyat
   gunsonuFiyatlariOlustur()
-  fiyat = float(yrmdcAryz.lineEdit_altnFyt.text().replace(",", "."))
-  gunsonuFiyat['ALTIN'] = fiyat
   borsaDurumSozluguOlustur()
   yuzdePayGuncelle()
   borsa_durum_tablosu_olustur(yrmdcAryz.tableWidget_borsaDurum, borsaDurumVerileri)
   borsa_cikilmislarTablosuOlustur(yrmdcAryz.tableWidget_cikilmisDurum, cikilmisKagitlar)
+  karzararHesapla()
+
+  # dateEdit öğelerinin tarihlerini bugüne ayarlama
+
+  bugun = QDate.currentDate()
+  yrmdcAryz.dateEdit_tarih.setDate(bugun)
+  yrmdcAryz.dateEdit_alimAraligi_1.setDate(bugun)
+  yrmdcAryz.dateEdit_alimAraligi_2.setDate(bugun)
+
 
 def karzararHesapla():
   varlik = 0
@@ -487,8 +495,9 @@ def guniciFiyatlaraGoreDegerleriOlustur():
   for i in range(1, strSayisi):
     islenenSembol = worksheet.cell_value(i, 0)
     sembolGunIciFiyat = worksheet.cell_value(i, 3)
-    if islenenSembol == "ALTINS1":
-      islenenSembol = "ALTIN"
+
+    if sembolGunIciFiyat == 0:
+      print(islenenSembol, "fiyatını düzelt")
 
     vtimlec.execute(f"SELECT SUM(`gerceklesen`), sum(`hacim`) FROM `emirlerim` WHERE `sembol` = '{islenenSembol}' AND `alsat` = 'A' ")
     islemIcinGelenAlimlar = vtimlec.fetchall()
@@ -515,10 +524,11 @@ def guniciFiyatlaraGoreDegerleriOlustur():
     karZararYuzdesi = round(cikis / toplamAlimHacim * 100, 2)
 
     guniciFiyatVerileri[islenenSembol] = {'sembolGunIciFiyat': sembolGunIciFiyat, 'cikis': cikis, 'sembolVarlik': sembolVarlik, 'karZararYuzdesi': karZararYuzdesi}
-  alt = gunsonuFiyat.get("ALTIN")
-  print(guniciFiyatVerileri)
+  print("- - -")
+  #print(guniciFiyatVerileri)
   gncSmbl = yrmdcAryz.label_sembol.text()
-  if gncSmbl in ("SELAM", "ALTIN"):
+  #if gncSmbl in ("SELAM", "ALTIN"):
+  if gncSmbl == "SELAM":
     pass
   else:
     gncfyt = guniciFiyatVerileri[gncSmbl]['sembolGunIciFiyat']
@@ -660,24 +670,18 @@ def seciliSembolIslemleri(item):
 
   if guniciFiyatVerileri:
 
-    if sembol == "ALTIN":
-      yrmdcAryz.lineEdit_guniciFiyat.clear()
-      yrmdcAryz.label_guniciCikis.clear()
-      yrmdcAryz.label_gunici_SembolVarlik.clear()
-      yrmdcAryz.label_guniciKarzarar.clear()
-    else:
-      gncfyt = guniciFiyatVerileri[sembol]['sembolGunIciFiyat']
-      gncfytYazi = "( " + str(gncfyt) + " )"
-      yrmdcAryz.lineEdit_guniciFiyat.setText(gncfytYazi)
-      gnccks = guniciFiyatVerileri[sembol]['cikis']
-      gnccksYazi = "( " + tl_ekle(vrgnkt(gnccks)) + " )"
-      yrmdcAryz.label_guniciCikis.setText(gnccksYazi)
-      gncvrlk = guniciFiyatVerileri[sembol]['sembolVarlik']
-      gncvrlkYazi = "( " + tl_ekle(vrgnkt(gncvrlk)) + " )"
-      yrmdcAryz.label_gunici_SembolVarlik.setText(gncvrlkYazi)
-      gnckrzrryzds = guniciFiyatVerileri[sembol]['karZararYuzdesi']
-      gnckrzrryzdsYazi = "( %" + str(gnckrzrryzds) + " )"
-      yrmdcAryz.label_guniciKarzarar.setText(gnckrzrryzdsYazi)
+    gncfyt = guniciFiyatVerileri[sembol]['sembolGunIciFiyat']
+    gncfytYazi = "( " + str(gncfyt) + " )"
+    yrmdcAryz.lineEdit_guniciFiyat.setText(gncfytYazi)
+    gnccks = guniciFiyatVerileri[sembol]['cikis']
+    gnccksYazi = "( " + tl_ekle(vrgnkt(gnccks)) + " )"
+    yrmdcAryz.label_guniciCikis.setText(gnccksYazi)
+    gncvrlk = guniciFiyatVerileri[sembol]['sembolVarlik']
+    gncvrlkYazi = "( " + tl_ekle(vrgnkt(gncvrlk)) + " )"
+    yrmdcAryz.label_gunici_SembolVarlik.setText(gncvrlkYazi)
+    gnckrzrryzds = guniciFiyatVerileri[sembol]['karZararYuzdesi']
+    gnckrzrryzdsYazi = "( %" + str(gnckrzrryzds) + " )"
+    yrmdcAryz.label_guniciKarzarar.setText(gnckrzrryzdsYazi)
 
 def alimVerisiIsleme(gel):
   vtimlec.execute(f"SELECT `gun`, `gerceklesen`, `fiyat`, `hacim` FROM `emirlerim` WHERE `sembol` = '{gel}' AND `alsat` = 'A' ORDER BY `emirlerim`.`gun` ASC")
@@ -1082,8 +1086,9 @@ def exceleAktar():
 
 yrmdcAryz.pushButton_excelAktar.clicked.connect(exceleAktar)
 #----------   Borsa Durum başlangıç çalışanları
-yrmdcAryz.pushButton_altnFytGnclle.clicked.connect(altnFyt)
-yrmdcAryz.pushButton_toplamKZ.clicked.connect(karzararHesapla)
+baslangicDegerleriOlusturma()
+#yrmdcAryz.pushButton_altnFytGnclle.clicked.connect(altnFyt)
+#yrmdcAryz.pushButton_toplamKZ.clicked.connect(karzararHesapla)
 yrmdcAryz.pushButton_ekle.clicked.connect(ilkSembolGirisi)
 komboyaSektorleriDiz()
 #----------    kzModul başlangıç çalışanları
